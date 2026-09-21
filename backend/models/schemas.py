@@ -193,6 +193,25 @@ class ProvenanceRecord(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+# ─── Assessment Scores ───────────────────────────────────
+
+class ScoreDetail(BaseModel):
+    """A single assessment metric with explanation."""
+    score: float = Field(..., ge=0, le=100)
+    explanation: str
+    references: list[str] = Field(default_factory=list)
+
+
+class AssessmentScores(BaseModel):
+    """All 6 innovation assessment metrics."""
+    prior_art_density: ScoreDetail
+    feature_novelty: ScoreDetail
+    combination_distinctiveness: ScoreDetail
+    research_freshness: ScoreDetail
+    evidence_strength: ScoreDetail
+    search_confidence: ScoreDetail
+
+
 # ─── API Responses ───────────────────────────────────────
 
 class AnalysisResponse(BaseModel):
@@ -200,4 +219,8 @@ class AnalysisResponse(BaseModel):
     innovation_id: str
     structured_idea: StructuredIdea
     feature_matrix: FeatureMatrix
+    scores: Optional[AssessmentScores] = None
+    assessment_summary: Optional[str] = None
+    report: Optional[dict] = None
     provenance: ProvenanceRecord
+

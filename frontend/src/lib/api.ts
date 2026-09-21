@@ -61,10 +61,28 @@ export interface ProvenanceRecord {
   created_at: string;
 }
 
+export interface ScoreDetail {
+  score: number;
+  explanation: string;
+  references: string[];
+}
+
+export interface AssessmentScores {
+  prior_art_density: ScoreDetail;
+  feature_novelty: ScoreDetail;
+  combination_distinctiveness: ScoreDetail;
+  research_freshness: ScoreDetail;
+  evidence_strength: ScoreDetail;
+  search_confidence: ScoreDetail;
+}
+
 export interface AnalysisResponse {
   innovation_id: string;
   structured_idea: StructuredIdea;
   feature_matrix: FeatureMatrix;
+  scores: AssessmentScores | null;
+  assessment_summary: string | null;
+  report: Record<string, unknown> | null;
   provenance: ProvenanceRecord;
 }
 

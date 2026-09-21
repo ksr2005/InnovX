@@ -15,6 +15,8 @@ from models.schemas import (
     FeatureEvidence,
     CoverageLevel,
     AnalysisResponse,
+    AssessmentScores,
+    ScoreDetail,
 )
 from services import structuring
 from services import search_openalex
@@ -23,6 +25,8 @@ from services import search_patents
 from services import similarity
 from services import evidence
 from services import provenance
+from services import scoring
+from services import report_gen
 
 router = APIRouter()
 
@@ -150,10 +154,51 @@ async def full_analysis(submission: IdeaSubmission):
         },
     )
 
+    # Step 8: Compute assessment scores
+    features_data = [fa.model_dump() for fa in feature_analyses]
+    raw_scores = scoring.compute_all_scores(
+        features_data,
+        matrix.search_sources,
+    )
+
+    assessment_scores = AssessmentScores(
+        prior_art_density=ScoreDetail(**raw_scores["prior_art_density"]),
+        feature_novelty=ScoreDetail(**raw_scores["feature_novelty"]),
+        combination_distinctiveness=ScoreDetail(**raw_scores["combination_distinctiveness"]),
+        research_freshness=ScoreDetail(**raw_scores["research_freshness"]),
+        evidence_strength=ScoreDetail(**raw_scores["evidence_strength"]),
+        search_confidence=ScoreDetail(**raw_scores["search_confidence"]),
+    )
+
+    # Step 9: Generate AI assessment summary
+    assessment_summary = await scoring.generate_assessment_summary(
+        structured.model_dump(),
+        raw_scores,
+        features_data,
+    )
+
+    # Step 10: Generate full report
+    report = report_gen.generate_report(
+        innovation_id=innovation_id,
+        raw_input=submission.raw_text,
+        structured_idea=structured.model_dump(),
+        feature_matrix=matrix.model_dump(),
+        scores=raw_scores,
+        assessment_summary=assessment_summary,
+        provenance=provenance_record.model_dump(),
+    )
+
+    # Cache report for retrieval via GET /api/report/{id}
+    from routers.report import cache_report
+    cache_report(innovation_id, report)
+
     return AnalysisResponse(
         innovation_id=innovation_id,
         structured_idea=structured,
         feature_matrix=matrix,
+        scores=assessment_scores,
+        assessment_summary=assessment_summary,
+        report=report,
         provenance=provenance_record,
     )
 

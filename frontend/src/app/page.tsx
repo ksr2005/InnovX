@@ -4,6 +4,7 @@ import { useState } from "react";
 import { analyzeIdea, type AnalysisResponse } from "@/lib/api";
 import { IdeaInput } from "@/components/idea-input";
 import { FeatureMatrix } from "@/components/feature-matrix";
+import { AssessmentView } from "@/components/assessment-view";
 import { ProvenanceCard } from "@/components/provenance-card";
 
 export default function Home() {
@@ -101,6 +102,11 @@ export default function Home() {
 
             {/* Feature Matrix */}
             <FeatureMatrix matrix={result.feature_matrix} />
+
+            {/* Assessment Scores */}
+            {result.scores && result.assessment_summary && (
+              <AssessmentView scores={result.scores} summary={result.assessment_summary} />
+            )}
 
             {/* Provenance */}
             <ProvenanceCard provenance={result.provenance} />
