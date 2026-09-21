@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-MODEL_NAME = "gemini-2.0-flash"
+MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
 
 EVIDENCE_PROMPT = """You are a precise technical evidence extractor for a prior-art analysis system.
 
@@ -61,8 +61,9 @@ TECHNICAL FEATURE:
 DOCUMENT ABSTRACT:
 {document_abstract}"""
 
+    import asyncio
     try:
-        response = await model.generate_content_async(prompt)
+        response = await asyncio.to_thread(model.generate_content, prompt)
         result = json.loads(response.text)
         return result.get("evidence_sentence")
     except Exception as e:

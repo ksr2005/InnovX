@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 from typing import Optional
 from urllib.parse import quote
 
-BASE_URL = "http://export.arxiv.org/api/query"
+BASE_URL = "https://export.arxiv.org/api/query"
 
 
 async def search_papers(
@@ -29,7 +29,7 @@ async def search_papers(
     Returns:
         List of paper dicts.
     """
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
         params = {
             "search_query": f"all:{query}",
             "start": start,

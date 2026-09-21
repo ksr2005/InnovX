@@ -67,7 +67,7 @@ async def search_works(
                 "cited_by_count": work.get("cited_by_count", 0),
                 "publication_year": work.get("publication_year"),
                 "type": work.get("type"),
-                "venue": (work.get("primary_location") or {}).get("source", {}).get("display_name") if work.get("primary_location") else None,
+                "venue": (work.get("primary_location") or {}).get("source", {}).get("display_name") if (work.get("primary_location") or {}).get("source") else None,
             },
         })
 

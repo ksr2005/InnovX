@@ -17,7 +17,7 @@ def load_embedding_model():
     if _model is None:
         print(f"Loading embedding model: {MODEL_NAME}...")
         _model = SentenceTransformer(MODEL_NAME)
-        print(f"✓ Model loaded: {MODEL_NAME} ({_model.get_sentence_embedding_dimension()}-dim)")
+        print(f"[OK] Model loaded: {MODEL_NAME} ({_model.get_sentence_embedding_dimension()}-dim)")
     return _model
 
 

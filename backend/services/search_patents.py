@@ -47,13 +47,15 @@ async def search_patents(
         "s": [{"patent_date": "desc"}],
     }
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
         response = await client.post(
             BASE_URL,
             json=request_body,
             headers={"Content-Type": "application/json"},
         )
         response.raise_for_status()
+        if "application/json" not in response.headers.get("content-type", ""):
+            return []
         data = response.json()
 
     results = []

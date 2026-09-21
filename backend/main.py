@@ -19,8 +19,8 @@ async def lifespan(app: FastAPI):
     # Startup: load the sentence-transformer model once
     from services.similarity import load_embedding_model
     load_embedding_model()
-    print("✓ Embedding model loaded")
-    print("✓ InnovX Engine ready")
+    print("[OK] Embedding model loaded")
+    print("[OK] InnovX Engine ready")
     yield
     # Shutdown
     print("InnovX Engine shutting down")

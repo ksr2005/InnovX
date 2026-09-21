@@ -15,8 +15,8 @@ load_dotenv()
 # Configure Gemini
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# Use Gemini 2.0 Flash for speed and free tier
-MODEL_NAME = "gemini-2.0-flash"
+# Use Gemini Flash Lite for high throughput and full free tier allowance
+MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
 
 STRUCTURING_PROMPT = """You are an expert technical analyst for an innovation discovery platform called InnovX.
 
@@ -76,9 +76,10 @@ async def structure_idea(raw_text: str) -> StructuredIdea:
         ),
     )
 
+    import asyncio
     prompt = f"{STRUCTURING_PROMPT}\n\nUSER'S IDEA:\n{raw_text}"
 
-    response = await model.generate_content_async(prompt)
+    response = await asyncio.to_thread(model.generate_content, prompt)
     result_text = response.text
 
     # Parse the JSON response
@@ -119,7 +120,8 @@ Domain: {domain}
 Use different terminology, synonyms, and related concepts for each query.
 Respond with a JSON array of strings: ["query1", "query2", "query3", "query4", "query5"]"""
 
-    response = await model.generate_content_async(prompt)
+    import asyncio
+    response = await asyncio.to_thread(model.generate_content, prompt)
     queries = json.loads(response.text)
 
     if isinstance(queries, list):
