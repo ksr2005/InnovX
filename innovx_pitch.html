@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InnovX — Pitch Deck</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --surface: #1a1a2e;
+    --border: #2a2a3e;
+    --text: #e8e8f0;
+    --text-dim: #8888a0;
+    --accent: #6c5ce7;
+    --accent2: #a29bfe;
+    --green: #00cec9;
+    --orange: #fdcb6e;
+    --red: #ff6b6b;
+    --blue: #74b9ff;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  .slide {
+    display: none;
+    width: 100vw;
+    height: 100vh;
+    padding: 60px 80px;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .slide.active { display: flex; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Navigation */
+  .nav {
+    position: fixed;
+    bottom: 30px;
+    right: 40px;
+    display: flex;
+    gap: 12px;
+    z-index: 100;
+    align-items: center;
+  }
+  .nav button {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .nav button:hover { background: var(--accent); border-color: var(--accent); }
+  .slide-counter {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  /* Progress bar */
+  .progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    transition: width 0.4s ease;
+    z-index: 100;
+  }
+
+  /* Typography */
+  h1 { font-size: 56px; font-weight: 800; line-height: 1.1; letter-spacing: -1.5px; }
+  h2 { font-size: 42px; font-weight: 700; line-height: 1.2; letter-spacing: -1px; margin-bottom: 32px; }
+  h3 { font-size: 24px; font-weight: 600; margin-bottom: 16px; }
+  p { font-size: 20px; line-height: 1.6; color: var(--text-dim); max-width: 800px; }
+  .big-p { font-size: 24px; line-height: 1.7; }
+
+  .gradient-text {
+    background: linear-gradient(135deg, var(--accent2), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .tagline {
+    font-size: 22px;
+    color: var(--text-dim);
+    font-weight: 300;
+    margin-top: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .label {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 16px;
+  }
+
+  /* Slide-specific layouts */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: start;
+  }
+
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+  }
+
+  .four-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 20px;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+  }
+  .card h3 { font-size: 18px; margin-bottom: 10px; }
+  .card p { font-size: 15px; line-height: 1.5; }
+
+  .card-accent {
+    border-top: 3px solid var(--accent);
+  }
+  .card-green { border-top: 3px solid var(--green); }
+  .card-orange { border-top: 3px solid var(--orange); }
+  .card-blue { border-top: 3px solid var(--blue); }
+  .card-red { border-top: 3px solid var(--red); }
+
+  .icon-big {
+    font-size: 36px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  /* Pipeline */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-top: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .pipeline-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 22px;
+    font-size: 15px;
+    font-weight: 500;
+    text-align: center;
+    min-width: 140px;
+  }
+  .pipeline-arrow {
+    font-size: 22px;
+    color: var(--accent2);
+    margin: 0 4px;
+  }
+
+  /* Table */
+  .tech-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 16px;
+  }
+  .tech-table th {
+    text-align: left;
+    padding: 14px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-weight: 600;
+    color: var(--accent2);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .tech-table td {
+    padding: 14px 20px;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .tech-table td:first-child { color: var(--text); font-weight: 500; }
+  .tech-table tr:hover td { background: var(--surface); }
+
+  /* Feature matrix preview */
+  .matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+    margin-top: 24px;
+  }
+  .matrix-table th {
+    text-align: left;
+    padding: 12px 16px;
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .matrix-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .matrix-table tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-high { background: rgba(255,107,107,0.2); color: var(--red); }
+  .badge-med { background: rgba(253,203,110,0.2); color: var(--orange); }
+  .badge-low { background: rgba(0,206,201,0.2); color: var(--green); }
+  .badge-none { background: rgba(136,136,160,0.15); color: var(--text-dim); }
+
+  /* Timeline */
+  .timeline {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 24px;
+  }
+  .timeline-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+  }
+  .week1::before { background: var(--accent); }
+  .week2::before { background: var(--green); }
+  .week3::before { background: var(--orange); }
+  .week4::before { background: var(--blue); }
+
+  .week-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+  .wb1 { background: rgba(108,92,231,0.2); color: var(--accent2); }
+  .wb2 { background: rgba(0,206,201,0.2); color: var(--green); }
+  .wb3 { background: rgba(253,203,110,0.2); color: var(--orange); }
+  .wb4 { background: rgba(116,185,255,0.2); color: var(--blue); }
+
+  .timeline-item h3 { font-size: 20px; margin-bottom: 12px; }
+  .timeline-item ul {
+    list-style: none;
+    padding: 0;
+  }
+  .timeline-item li {
+    font-size: 14px;
+    color: var(--text-dim);
+    padding: 4px 0;
+    padding-left: 18px;
+    position: relative;
+  }
+  .timeline-item li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--accent2);
+  }
+
+  /* Quote */
+  .quote {
+    font-size: 28px;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--text);
+    border-left: 4px solid var(--accent);
+    padding-left: 28px;
+    margin: 30px 0;
+    line-height: 1.5;
+  }
+
+  /* Stat row */
+  .stats {
+    display: flex;
+    gap: 48px;
+    margin-top: 36px;
+  }
+  .stat-num {
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--accent2);
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  /* Comparison */
+  .vs-container {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 24px;
+    align-items: center;
+    margin-top: 32px;
+  }
+  .vs-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+  }
+  .vs-bad { border-color: var(--red); opacity: 0.6; }
+  .vs-good { border-color: var(--green); }
+  .vs-divider {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text-dim);
+  }
+  .vs-box h3 { font-size: 18px; margin-bottom: 14px; }
+  .vs-box ul { list-style: none; padding: 0; }
+  .vs-box li {
+    font-size: 14px;
+    padding: 5px 0;
+    color: var(--text-dim);
+  }
+  .vs-bad li::before { content: '✗ '; color: var(--red); }
+  .vs-good li::before { content: '✓ '; color: var(--green); }
+
+  .cost-zero {
+    font-size: 80px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--green), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+
+  /* Diff points */
+  .diff-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 28px;
+  }
+  .diff-item {
+    display: flex;
+    gap: 16px;
+    align-items: start;
+  }
+  .diff-num {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--accent);
+    min-width: 40px;
+  }
+  .diff-item h4 { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+  .diff-item p { font-size: 14px; color: var(--text-dim); line-height: 1.4; }
+
+  /* Watermark */
+  .watermark {
+    position: fixed;
+    bottom: 30px;
+    left: 40px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--border);
+    letter-spacing: 2px;
+    z-index: 100;
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+<div class="watermark">INNOVX</div>
+
+<!-- ==================== SLIDE 1: TITLE ==================== -->
+<div class="slide active" id="s1">
+  <div class="label">Introducing</div>
+  <h1><span class="gradient-text">InnovX</span></h1>
+  <p class="tagline">AI-Powered Innovation Discovery, Validation &amp; Commercialization Engine</p>
+  <p class="tagline" style="margin-top: 40px; font-size: 17px; color: var(--border);">
+    "Have the idea. We help you discover its value and find its next path."
+  </p>
+</div>
+
+<!-- ==================== SLIDE 2: THE PROBLEM ==================== -->
+<div class="slide" id="s2">
+  <div class="label">The Problem</div>
+  <h2>Ideas Die Because Creators <span class="gradient-text">Can't Evaluate Them</span></h2>
+  <div class="two-col" style="margin-top: 20px;">
+    <div>
+      <div class="quote">
+        "Is my idea actually new? Has someone already built this? Should I patent it? Should I sell it? Can I raise funding?"
+      </div>
+      <p style="margin-top: 24px; font-size: 17px;">
+        Today, answering these questions requires searching fragmented patent databases, academic journals, and technical sources manually — taking weeks and costing thousands.
+      </p>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom: 16px;">
+        <h3 style="color: var(--red);">❌ Fragmented Information</h3>
+        <p>Prior art is scattered across USPTO, WIPO, arXiv, OpenAlex, GitHub, IEEE — no single tool covers them all.</p>
+      </div>
+      <div class="card" style="margin-bottom: 16px;">
+        <h3 style="color: var(--red);">❌ Keyword Search Fails</h3>
+        <p>"Underground acoustic navigation" and "subterranean sonar-based positioning" describe the same thing — keyword search misses this.</p>
+      </div>
+      <div class="card">
+        <h3 style="color: var(--red);">❌ No Path After Discovery</h3>
+        <p>Even if you find your idea is novel, no tool helps you decide: patent it, license it, publish it, or fund it.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 3: THE GAP ==================== -->
+<div class="slide" id="s3">
+  <div class="label">The Gap</div>
+  <h2>Two Worlds That <span class="gradient-text">Can't Find Each Other</span></h2>
+  <div class="vs-container">
+    <div style="text-align: center;">
+      <div style="font-size: 64px; margin-bottom: 16px;">💡</div>
+      <h3 style="font-size: 22px; margin-bottom: 12px;">Creators</h3>
+      <p style="font-size: 16px; text-align: left;">
+        Students, researchers, engineers, hobbyists with potentially valuable ideas — but lacking capital, manufacturing, business knowledge, or time to commercialize.
+      </p>
+    </div>
+    <div class="vs-divider">⟷</div>
+    <div style="text-align: center;">
+      <div style="font-size: 64px; margin-bottom: 16px;">🏢</div>
+      <h3 style="font-size: 22px; margin-bottom: 12px;">Builders & Buyers</h3>
+      <p style="font-size: 16px; text-align: left;">
+        Companies, investors, research labs, and developers actively searching for new technologies, inventions, and concepts to build or acquire.
+      </p>
+    </div>
+  </div>
+  <p style="text-align: center; margin-top: 36px; font-size: 20px; color: var(--accent2); font-weight: 500;">
+    InnovX bridges this gap with AI-powered intelligence and structured commercialization paths.
+  </p>
+</div>
+
+<!-- ==================== SLIDE 4: THE SOLUTION ==================== -->
+<div class="slide" id="s4">
+  <div class="label">The Solution</div>
+  <h2>What <span class="gradient-text">InnovX</span> Does</h2>
+  <div class="pipeline">
+    <div class="pipeline-step">📝<br>User Types Idea</div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">🧠<br>AI Decomposes<br>into Features</div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">🔍<br>Multi-Source<br>Prior Art Search</div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">📊<br>Feature × Evidence<br>Matrix</div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">📋<br>Evidence-Backed<br>Report</div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step" style="border-color: var(--accent); background: rgba(108,92,231,0.1);">🚀<br>Choose<br>Your Path</div>
+  </div>
+  <div class="stats">
+    <div>
+      <div class="stat-num">250M+</div>
+      <div class="stat-label">Academic papers searched (OpenAlex)</div>
+    </div>
+    <div>
+      <div class="stat-num">12M+</div>
+      <div class="stat-label">US patents indexed (USPTO)</div>
+    </div>
+    <div>
+      <div class="stat-num">2.4M+</div>
+      <div class="stat-label">Preprints covered (arXiv)</div>
+    </div>
+    <div>
+      <div class="stat-num">&lt;60s</div>
+      <div class="stat-label">Time to generate full report</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 5: HOW THE ENGINE WORKS ==================== -->
+<div class="slide" id="s5">
+  <div class="label">Core Engine</div>
+  <h2>Feature-Level <span class="gradient-text">Intelligence</span></h2>
+  <p style="margin-bottom: 24px;">Instead of a single similarity score, InnovX decomposes ideas into atomic technical features and finds evidence for each one independently.</p>
+  <div class="two-col" style="gap: 40px;">
+    <div>
+      <h3 style="color: var(--text-dim); font-size: 15px; text-transform: uppercase; letter-spacing: 1px;">User Submits</h3>
+      <div class="card" style="margin-top: 10px; font-style: italic; font-size: 16px; color: var(--text-dim);">
+        "An autonomous robot for underground mines that navigates without GPS, detects gas hazards, and transmits only semantically important data to operators."
+      </div>
+      <h3 style="color: var(--text-dim); font-size: 15px; text-transform: uppercase; letter-spacing: 1px; margin-top: 24px;">AI Extracts Features</h3>
+      <div style="margin-top: 10px;">
+        <div class="card" style="padding: 12px 18px; margin-bottom: 8px; font-size: 15px;"><span style="color: var(--accent2); font-weight: 600;">F1</span> &nbsp;GPS-denied acoustic positioning</div>
+        <div class="card" style="padding: 12px 18px; margin-bottom: 8px; font-size: 15px;"><span style="color: var(--accent2); font-weight: 600;">F2</span> &nbsp;Real-time gas hazard detection</div>
+        <div class="card" style="padding: 12px 18px; margin-bottom: 8px; font-size: 15px;"><span style="color: var(--accent2); font-weight: 600;">F3</span> &nbsp;Semantic data filtering for comms</div>
+        <div class="card" style="padding: 12px 18px; margin-bottom: 8px; font-size: 15px;"><span style="color: var(--accent2); font-weight: 600;">F4</span> &nbsp;Underground autonomous navigation</div>
+        <div class="card" style="padding: 12px 18px; font-size: 15px;"><span style="color: var(--accent2); font-weight: 600;">F5</span> &nbsp;Specific sensor-fusion architecture</div>
+      </div>
+    </div>
+    <div>
+      <h3 style="color: var(--text-dim); font-size: 15px; text-transform: uppercase; letter-spacing: 1px;">Evidence Matrix Output</h3>
+      <table class="matrix-table" style="margin-top: 10px;">
+        <tr><th>Feature</th><th>Evidence</th><th>Coverage</th></tr>
+        <tr><td>GPS-denied acoustic positioning</td><td style="color: var(--text-dim); font-size: 13px;">12 papers, 3 patents</td><td><span class="badge badge-high">HIGH</span></td></tr>
+        <tr><td>Real-time gas hazard detection</td><td style="color: var(--text-dim); font-size: 13px;">8 papers, 5 patents</td><td><span class="badge badge-high">HIGH</span></td></tr>
+        <tr><td>Semantic data filtering</td><td style="color: var(--text-dim); font-size: 13px;">4 papers, 0 patents</td><td><span class="badge badge-med">MEDIUM</span></td></tr>
+        <tr><td>Underground autonomous nav</td><td style="color: var(--text-dim); font-size: 13px;">15 papers, 7 patents</td><td><span class="badge badge-high">HIGH</span></td></tr>
+        <tr><td>Specific sensor-fusion arch.</td><td style="color: var(--text-dim); font-size: 13px;">1 paper</td><td><span class="badge badge-low">LOW</span></td></tr>
+        <tr><td style="color: var(--green);">Exact combination proposed</td><td style="color: var(--text-dim); font-size: 13px;">No close match found</td><td><span class="badge badge-none">NONE</span></td></tr>
+      </table>
+      <p style="margin-top: 16px; font-size: 14px; color: var(--green);">
+        ↑ Every cell links to the exact source sentence. No hallucinations. No vague percentages.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 6: THE 4 PATHS ==================== -->
+<div class="slide" id="s6">
+  <div class="label">Creator Paths</div>
+  <h2>Four Ways Forward. <span class="gradient-text">Creator Decides.</span></h2>
+  <p style="margin-bottom: 28px;">After receiving the prior-art report, the creator chooses their own path. The platform assists — never dictates.</p>
+  <div class="four-col">
+    <div class="card card-accent">
+      <span class="icon-big">🛡️</span>
+      <h3>Protect</h3>
+      <p>Guide to filing a provisional patent application. Download a preparation package with structured claims and prior-art summary.</p>
+      <p style="margin-top: 12px; font-size: 13px; color: var(--accent2);">USPTO provisional: $80</p>
+    </div>
+    <div class="card card-green">
+      <span class="icon-big">🌍</span>
+      <h3>Share</h3>
+      <p>Generate a Defensive Publication. Make the idea public prior art so no corporation can patent and lock it away. Free forever.</p>
+      <p style="margin-top: 12px; font-size: 13px; color: var(--green);">Free the idea</p>
+    </div>
+    <div class="card card-orange">
+      <span class="icon-big">🤝</span>
+      <h3>Connect</h3>
+      <p>List on the NDA-gated marketplace. Only a sanitized summary is public. Full disclosure requires mutual NDA. License, sell, or co-develop.</p>
+      <p style="margin-top: 12px; font-size: 13px; color: var(--orange);">Monetize safely</p>
+    </div>
+    <div class="card card-blue">
+      <span class="icon-big">🚀</span>
+      <h3>Build</h3>
+      <p>AI generates a complete crowdfunding campaign — pitch, roadmap, budget, rewards, video script. Export to Kickstarter or Indiegogo.</p>
+      <p style="margin-top: 12px; font-size: 13px; color: var(--blue);">Fund your vision</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 7: MARKETPLACE MODEL ==================== -->
+<div class="slide" id="s7">
+  <div class="label">Key Design Decision</div>
+  <h2>NDA-Gated, Not <span style="color: var(--red);">Open</span></h2>
+  <div class="vs-container">
+    <div class="vs-box vs-bad">
+      <h3 style="color: var(--red);">❌ Open Idea Marketplace</h3>
+      <ul>
+        <li>Full idea visible to everyone</li>
+        <li>Destroys patent rights globally (EU, China, India)</li>
+        <li>Corporations legally refuse unsolicited ideas</li>
+        <li>Ideas get copied with no recourse</li>
+        <li>Quirky raised $185M → bankrupt</li>
+        <li>IPwe (IBM-backed) → liquidated 2024</li>
+      </ul>
+    </div>
+    <div class="vs-divider">VS</div>
+    <div class="vs-box vs-good">
+      <h3 style="color: var(--green);">✓ NDA-Gated Connection</h3>
+      <ul>
+        <li>Only sanitized summary is public</li>
+        <li>Preserves all IP rights globally</li>
+        <li>Buyers engage because they're protected too</li>
+        <li>Details revealed only under mutual NDA</li>
+        <li>How university tech transfer actually works</li>
+        <li>Proven model (Yet2, TechLink, TTOs)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 8: PROVENANCE ==================== -->
+<div class="slide" id="s8">
+  <div class="label">Provenance</div>
+  <h2>Cryptographic <span class="gradient-text">Proof of Existence</span></h2>
+  <div class="two-col" style="margin-top: 20px;">
+    <div>
+      <p style="font-size: 18px;">Every innovation record is cryptographically fingerprinted with SHA-256 and timestamped the moment it's created or updated.</p>
+      <p style="font-size: 18px; margin-top: 16px;">Each version references the previous hash, creating an <strong>immutable chain</strong> proving:</p>
+      <div class="card" style="margin-top: 20px;">
+        <p style="font-size: 16px;">✓ &nbsp;This document existed at this exact time</p>
+        <p style="font-size: 16px; margin-top: 8px;">✓ &nbsp;It has not been modified since</p>
+        <p style="font-size: 16px; margin-top: 8px;">✓ &nbsp;Every version is permanently recorded</p>
+      </div>
+      <p style="margin-top: 24px; font-size: 15px; color: var(--orange);">
+        ⚠️ This is provenance evidence — not a patent. We clearly communicate this to all users.
+      </p>
+    </div>
+    <div>
+      <div class="card" style="font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 2;">
+        <div style="color: var(--text-dim);">// Innovation Record v1</div>
+        <div><span style="color: var(--accent2);">hash:</span> a3f8c1...e92b</div>
+        <div><span style="color: var(--accent2);">time:</span> 2026-09-21T14:00:00Z</div>
+        <div><span style="color: var(--accent2);">prev:</span> null</div>
+        <br>
+        <div style="color: var(--text-dim);">// Innovation Record v2 (updated)</div>
+        <div><span style="color: var(--accent2);">hash:</span> 7b2d4f...c81a</div>
+        <div><span style="color: var(--accent2);">time:</span> 2026-09-22T09:30:00Z</div>
+        <div><span style="color: var(--accent2);">prev:</span> a3f8c1...e92b</div>
+        <br>
+        <div style="color: var(--text-dim);">// Innovation Record v3 (updated)</div>
+        <div><span style="color: var(--accent2);">hash:</span> e1f90a...35dc</div>
+        <div><span style="color: var(--accent2);">time:</span> 2026-09-25T16:45:00Z</div>
+        <div><span style="color: var(--accent2);">prev:</span> 7b2d4f...c81a</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 9: TECH STACK ==================== -->
+<div class="slide" id="s9">
+  <div class="label">Technology</div>
+  <h2>Built on <span class="gradient-text">Free-Tier Infrastructure</span></h2>
+  <div class="two-col" style="gap: 40px; align-items: center;">
+    <div>
+      <table class="tech-table">
+        <tr><th>Layer</th><th>Technology</th></tr>
+        <tr><td>Frontend</td><td>Next.js 14 + Tailwind CSS + shadcn/ui</td></tr>
+        <tr><td>Backend API</td><td>Python + FastAPI</td></tr>
+        <tr><td>AI Engine</td><td>Gemini 2.0 Flash (Google AI Studio)</td></tr>
+        <tr><td>Embeddings</td><td>sentence-transformers (local, CPU)</td></tr>
+        <tr><td>Database</td><td>Supabase (PostgreSQL + pgvector)</td></tr>
+        <tr><td>Research Data</td><td>OpenAlex + arXiv + USPTO APIs</td></tr>
+        <tr><td>Auth & Storage</td><td>Supabase Auth + Storage</td></tr>
+        <tr><td>Provenance</td><td>SHA-256 + PostgreSQL timestamps</td></tr>
+        <tr><td>Deploy (FE)</td><td>Vercel</td></tr>
+        <tr><td>Deploy (BE)</td><td>Render.com</td></tr>
+      </table>
+    </div>
+    <div style="text-align: center;">
+      <div class="cost-zero">$0</div>
+      <p style="font-size: 22px; margin-top: 12px; color: var(--text); font-weight: 600;">per month</p>
+      <p style="font-size: 16px; margin-top: 8px;">Every single component runs on free tier.<br>No credit card required.</p>
+      <div style="margin-top: 32px; text-align: left;">
+        <p style="font-size: 14px; color: var(--text-dim);">✓ &nbsp;1,500 AI requests/day (Gemini)</p>
+        <p style="font-size: 14px; color: var(--text-dim); margin-top: 4px;">✓ &nbsp;500 MB database (Supabase)</p>
+        <p style="font-size: 14px; color: var(--text-dim); margin-top: 4px;">✓ &nbsp;100K research queries/day (OpenAlex)</p>
+        <p style="font-size: 14px; color: var(--text-dim); margin-top: 4px;">✓ &nbsp;50K monthly auth users</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 10: 4-WEEK ROADMAP ==================== -->
+<div class="slide" id="s10">
+  <div class="label">Execution Plan</div>
+  <h2>4-Week <span class="gradient-text">Sprint Roadmap</span></h2>
+  <div class="timeline">
+    <div class="timeline-item week1">
+      <span class="week-badge wb1">WEEK 1</span>
+      <h3>The Brain — Core AI Engine</h3>
+      <ul>
+        <li>Idea submission & AI feature decomposition</li>
+        <li>Multi-source search (OpenAlex + arXiv + USPTO)</li>
+        <li>Semantic similarity with sentence-level evidence</li>
+        <li>Feature × Evidence matrix in browser</li>
+      </ul>
+      <p style="font-size: 13px; color: var(--accent2); margin-top: 10px;">Deliverable: Working search engine with visual matrix</p>
+    </div>
+    <div class="timeline-item week2">
+      <span class="week-badge wb2">WEEK 2</span>
+      <h3>The Report — Assessment & Provenance</h3>
+      <ul>
+        <li>Multi-dimensional innovation scoring (6 metrics)</li>
+        <li>Comprehensive downloadable PDF report</li>
+        <li>User accounts & private innovation vault</li>
+        <li>SHA-256 provenance chain with version history</li>
+      </ul>
+      <p style="font-size: 13px; color: var(--green); margin-top: 10px;">Deliverable: Full report pipeline + user dashboard</p>
+    </div>
+    <div class="timeline-item week3">
+      <span class="week-badge wb3">WEEK 3</span>
+      <h3>The Paths — Protect, Share, Connect</h3>
+      <ul>
+        <li>Patent filing guidance & preparation package</li>
+        <li>Defensive publication generator & export</li>
+        <li>NDA-gated marketplace with access request flow</li>
+        <li>In-platform messaging between parties</li>
+      </ul>
+      <p style="font-size: 13px; color: var(--orange); margin-top: 10px;">Deliverable: Three creator paths, fully functional</p>
+    </div>
+    <div class="timeline-item week4">
+      <span class="week-badge wb4">WEEK 4</span>
+      <h3>The Launch — Build Path & Deploy</h3>
+      <ul>
+        <li>AI crowdfunding campaign generator</li>
+        <li>Export for Kickstarter / Indiegogo / Crowd Supply</li>
+        <li>Landing page & onboarding flow</li>
+        <li>Production deployment on Vercel + Render</li>
+      </ul>
+      <p style="font-size: 13px; color: var(--blue); margin-top: 10px;">Deliverable: Complete platform, deployed & demo-ready</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 11: DIFFERENTIATORS ==================== -->
+<div class="slide" id="s11">
+  <div class="label">Why InnovX</div>
+  <h2>What Makes This <span class="gradient-text">Different</span></h2>
+  <div class="diff-grid">
+    <div class="diff-item">
+      <div class="diff-num">1</div>
+      <div>
+        <h4>Feature-Level, Not Document-Level</h4>
+        <p>Competitors give you "this paper is 71% similar." InnovX shows you exactly which feature matches, which sentence proves it, and which features have no prior art at all.</p>
+      </div>
+    </div>
+    <div class="diff-item">
+      <div class="diff-num">2</div>
+      <div>
+        <h4>Non-Patent Literature First</h4>
+        <p>For software, AI, and hardware inventions, the killer prior art is usually an arXiv paper or a GitHub repo — not a patent. InnovX searches code and preprints first.</p>
+      </div>
+    </div>
+    <div class="diff-item">
+      <div class="diff-num">3</div>
+      <div>
+        <h4>Every Claim Traceable to Evidence</h4>
+        <p>No hallucinated scores. No vague percentages. Every finding links to a real source, a real sentence, a real document. If the system doesn't know, it says so.</p>
+      </div>
+    </div>
+    <div class="diff-item">
+      <div class="diff-num">4</div>
+      <div>
+        <h4>Built for Creators, Not Attorneys</h4>
+        <p>PatSnap and IPRally cost $10K+/year and are designed for patent lawyers. InnovX is built for the 23-year-old engineer with a robotics idea at 2 AM.</p>
+      </div>
+    </div>
+    <div class="diff-item">
+      <div class="diff-num">5</div>
+      <div>
+        <h4>Action After Analysis</h4>
+        <p>Other tools stop at "here's your report." InnovX gives four concrete next steps: protect it, free it, monetize it, or fund it.</p>
+      </div>
+    </div>
+    <div class="diff-item">
+      <div class="diff-num">6</div>
+      <div>
+        <h4>Privacy by Default</h4>
+        <p>Everything is private until the creator explicitly decides otherwise. NDA-gated disclosure protects both innovators and interested parties.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 12: CLOSING ==================== -->
+<div class="slide" id="s12">
+  <h1 style="text-align: center;">
+    <span class="gradient-text">Ideas shouldn't die</span><br>
+    because their creators can't build them.
+  </h1>
+  <p style="text-align: center; margin: 30px auto 0; font-size: 22px; max-width: 700px;">
+    InnovX turns ideas into documented, researched, evidence-backed innovation assets — and gives creators the power to choose what happens next.
+  </p>
+  <div style="text-align: center; margin-top: 48px;">
+    <p style="font-size: 18px; color: var(--accent2); font-weight: 600;">Discover. &nbsp;Validate. &nbsp;Commercialize.</p>
+  </div>
+  <div style="text-align: center; margin-top: 60px;">
+    <p style="font-size: 15px; color: var(--text-dim);">4 Weeks &nbsp;·&nbsp; $0 Infrastructure &nbsp;·&nbsp; One Builder &nbsp;·&nbsp; Infinite Ideas</p>
+  </div>
+</div>
+
+
+<!-- ==================== NAVIGATION ==================== -->
+<div class="nav">
+  <span class="slide-counter" id="counter">1 / 12</span>
+  <button onclick="prevSlide()" title="Previous (←)">←</button>
+  <button onclick="nextSlide()" title="Next (→)">→</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const counter = document.getElementById('counter');
+  const progress = document.getElementById('progress');
+  let current = 0;
+
+  function showSlide(n) {
+    slides[current].classList.remove('active');
+    current = (n + slides.length) % slides.length;
+    slides[current].classList.add('active');
+    counter.textContent = `${current + 1} / ${slides.length}`;
+    progress.style.width = `${((current + 1) / slides.length) * 100}%`;
+  }
+
+  function nextSlide() { showSlide(current + 1); }
+  function prevSlide() { showSlide(current - 1); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+    if (e.key === 'Home') { e.preventDefault(); showSlide(0); }
+    if (e.key === 'End') { e.preventDefault(); showSlide(slides.length - 1); }
+  });
+
+  // Touch support
+  let touchStartX = 0;
+  document.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; });
+  document.addEventListener('touchend', (e) => {
+    const diff = e.changedTouches[0].screenX - touchStartX;
+    if (Math.abs(diff) > 50) { diff < 0 ? nextSlide() : prevSlide(); }
+  });
+
+  showSlide(0);
+</script>
+
+</body>
+</html>

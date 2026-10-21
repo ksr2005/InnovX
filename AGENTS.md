@@ -39,6 +39,12 @@ innovx/
 │   ├── .env                   # GEMINI_API_KEY, GEMINI_MODEL, SUPABASE_*, FRONTEND_URL
 │   └── venv/                  # Python 3.13 virtual environment
 │
+├── progress-tracker/          # Next.js 14 App: 30-Day Sprint & Mentor Progress Tracker
+│   ├── src/app/page.tsx       # Live progress dashboard (Timeline, Kanban, Mentor Remarks)
+│   ├── src/components/        # HeaderStats, DayCard, MentorRemarkModal, AddDayModal, etc.
+│   ├── src/data/roadmap.ts    # Complete 30-day task & subtask hierarchy
+│   └── src/lib/storage.ts     # LocalStorage + Cloud sync adapter
+│
 ├── supabase_schema.sql        # Complete SQL schema (pgvector, 11 tables, RLS)
 ├── .gitignore
 └── README.md
@@ -117,22 +123,24 @@ npm run dev
 ### Week 1 — Core AI Engine ✅ COMPLETE
 All search engines, similarity, evidence, structuring, feature matrix, frontend.
 
-### Week 2 — Reports, Auth, Provenance (IN PROGRESS)
+### Week 2 — Reports, Auth, Provenance ✅ COMPLETE
 - Days 8-9: Scoring engine + report generator ✅ COMPLETE
-- Day 10: PDF export (TODO)
-- Day 11: Supabase Auth + user dashboard (TODO)
-- Day 12: Provenance in Supabase (TODO)
-- Day 13: File uploads + innovation vault (TODO)
-- Day 14: Polish (TODO)
+- Day 10: PDF export ✅ COMPLETE
+- Day 11: Supabase Auth + user dashboard ✅ COMPLETE
+- Day 12: Provenance in Supabase + version timeline ✅ COMPLETE
+- Day 13: File uploads + innovation vault ✅ COMPLETE
+- Day 14: Polish & Mid-Sprint Integration Audit ✅ COMPLETE
 
 ### Week 3 — Creator Paths (Protect / Share / Connect)
-- Day 15: Decision UI
-- Day 16: Patent guidance path
-- Day 17: Defensive publication generator
-- Day 18-19: NDA-gated marketplace
-- Day 20-21: Polish
+- Day 15: Post-Report Decision Hub ("What Do You Want to Do?") ✅ COMPLETE
+- Day 16: Patent guidance path & filing prep package ✅ COMPLETE
+- Day 17: Defensive publication generator ✅ COMPLETE
+- Day 18: NDA-gated marketplace architecture & AI sanitizer ✅ COMPLETE
+- Day 19: Mutual NDA & access request flow ✅ COMPLETE
+- Day 20: In-Platform Confidential Messaging & Dual-Role Verification ✅ COMPLETE
+- Day 21: Week 3 Polish & Creator Paths Verification ✅ COMPLETE
 
-### Week 4 — Build Path + Campaign + Deploy
+### Week 4 — Build Path + Campaign + Deploy (in-progress)
 - Day 22-23: Crowdfunding campaign generator
 - Day 24: Landing page + onboarding
 - Day 25: Search improvements + edge cases

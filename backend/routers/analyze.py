@@ -17,6 +17,11 @@ from models.schemas import (
     AnalysisResponse,
     AssessmentScores,
     ScoreDetail,
+    GuardrailValidationRequest,
+    GuardrailValidationResponse,
+    SearchMethodology,
+    FeatureSearchAudit,
+    ApiQueryAudit,
 )
 from services import structuring
 from services import search_openalex
@@ -27,8 +32,19 @@ from services import evidence
 from services import provenance
 from services import scoring
 from services import report_gen
+from services import guardrails
 
 router = APIRouter()
+
+
+@router.post("/validate", response_model=GuardrailValidationResponse)
+async def validate_idea(submission: GuardrailValidationRequest):
+    """
+    Pre-flight evaluation of submission against edge-case guardrails
+    (brevity, non-technical domains, and overly broad visions).
+    """
+    result = await guardrails.evaluate_submission(submission.raw_text)
+    return GuardrailValidationResponse(**result)
 
 
 @router.post("/structure", response_model=StructuredIdea)
@@ -36,6 +52,20 @@ async def structure_idea(submission: IdeaSubmission):
     """
     Step 1: Take raw idea text and decompose into structured technical features.
     """
+    guardrail_eval = await guardrails.evaluate_submission(submission.raw_text)
+    if not guardrail_eval.get("is_valid"):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "status": guardrail_eval.get("status"),
+                "headline": guardrail_eval.get("headline"),
+                "feedback_message": guardrail_eval.get("feedback_message"),
+                "clarifying_questions": guardrail_eval.get("clarifying_questions", []),
+                "suggested_template": guardrail_eval.get("suggested_template"),
+                "detected_domain": guardrail_eval.get("detected_domain"),
+            },
+        )
+
     try:
         structured = await structuring.structure_idea(submission.raw_text)
         return structured
@@ -43,27 +73,41 @@ async def structure_idea(submission: IdeaSubmission):
         raise HTTPException(status_code=500, detail=f"Structuring failed: {str(e)}")
 
 
-@router.post("", response_model=AnalysisResponse)
-async def full_analysis(submission: IdeaSubmission):
+async def run_analysis_pipeline(raw_text: str, custom_innovation_id: str | None = None) -> dict:
     """
-    Full analysis pipeline: Structure → Search → Rank → Evidence → Matrix → Provenance
+    Execute the full 10-step InnovX discovery & assessment pipeline.
+    Reused by both initial discovery (/api/analyze) and version re-analysis (/api/innovations/{id}/reanalyze).
+    """
+    # Step 0: Guardrail Evaluation
+    guardrail_eval = await guardrails.evaluate_submission(raw_text)
+    if not guardrail_eval.get("is_valid"):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "status": guardrail_eval.get("status"),
+                "headline": guardrail_eval.get("headline"),
+                "feedback_message": guardrail_eval.get("feedback_message"),
+                "clarifying_questions": guardrail_eval.get("clarifying_questions", []),
+                "suggested_template": guardrail_eval.get("suggested_template"),
+                "detected_domain": guardrail_eval.get("detected_domain"),
+            },
+        )
 
-    This is the core endpoint of InnovX.
-    """
-    innovation_id = str(uuid.uuid4())[:8].upper()
+    innovation_id = custom_innovation_id or str(uuid.uuid4())
 
     # Step 1: Structure the idea
-    try:
-        structured = await structuring.structure_idea(submission.raw_text)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Structuring failed: {str(e)}")
+    structured = await structuring.structure_idea(raw_text)
 
-    # Step 2: Search all sources for each feature
+    # Step 2: Search all sources for each feature with API health & query auditing
+    api_health = {"openalex": "ok", "arxiv": "ok", "uspto": "ok"}
+    feature_audits = []
+    total_documents_scanned = 0
     feature_analyses = []
 
     for feature in structured.key_features:
-        # Search all three sources in parallel-ish (sequential for simplicity in MVP)
         all_docs = []
+        queries_run = []
+        primary_query = feature.search_queries[0] if feature.search_queries else feature.description
 
         # OpenAlex
         try:
@@ -71,8 +115,26 @@ async def full_analysis(submission: IdeaSubmission):
                 feature.description, feature.search_queries
             )
             all_docs.extend(openalex_results)
+            queries_run.append(
+                ApiQueryAudit(
+                    source="openalex",
+                    status="ok",
+                    query=primary_query,
+                    results_count=len(openalex_results),
+                )
+            )
         except Exception as e:
             print(f"OpenAlex search failed for {feature.id}: {e}")
+            api_health["openalex"] = "degraded"
+            queries_run.append(
+                ApiQueryAudit(
+                    source="openalex",
+                    status="degraded",
+                    query=primary_query,
+                    results_count=0,
+                    error_message=str(e),
+                )
+            )
 
         # arXiv
         try:
@@ -80,8 +142,26 @@ async def full_analysis(submission: IdeaSubmission):
                 feature.description, feature.search_queries
             )
             all_docs.extend(arxiv_results)
+            queries_run.append(
+                ApiQueryAudit(
+                    source="arxiv",
+                    status="ok",
+                    query=primary_query,
+                    results_count=len(arxiv_results),
+                )
+            )
         except Exception as e:
             print(f"arXiv search failed for {feature.id}: {e}")
+            api_health["arxiv"] = "degraded"
+            queries_run.append(
+                ApiQueryAudit(
+                    source="arxiv",
+                    status="degraded",
+                    query=primary_query,
+                    results_count=0,
+                    error_message=str(e),
+                )
+            )
 
         # USPTO
         try:
@@ -89,18 +169,39 @@ async def full_analysis(submission: IdeaSubmission):
                 feature.description, feature.search_queries
             )
             all_docs.extend(patent_results)
+            queries_run.append(
+                ApiQueryAudit(
+                    source="uspto",
+                    status="ok",
+                    query=primary_query,
+                    results_count=len(patent_results),
+                )
+            )
         except Exception as e:
             print(f"USPTO search failed for {feature.id}: {e}")
+            api_health["uspto"] = "degraded"
+            queries_run.append(
+                ApiQueryAudit(
+                    source="uspto",
+                    status="degraded",
+                    query=primary_query,
+                    results_count=0,
+                    error_message=str(e),
+                )
+            )
 
-        # Step 3: Rank by semantic similarity
-        ranked_docs = similarity.rank_documents_for_feature(
-            feature.description,
-            all_docs,
+        total_documents_scanned += len(all_docs)
+
+        # Step 3: Hybrid Ranking with Reciprocal Rank Fusion (RRF, k=60)
+        ranked_docs = similarity.reciprocal_rank_fusion(
+            documents=all_docs,
+            feature_text=feature.description,
+            k=60,
             text_key="abstract",
             top_k=10,
         )
 
-        # Step 4: Extract evidence for top 3 results (save API calls)
+        # Step 4: Extract evidence for top 3 results
         if ranked_docs:
             ranked_docs = await evidence.extract_evidence_batch(
                 feature.description,
@@ -108,9 +209,9 @@ async def full_analysis(submission: IdeaSubmission):
                 top_k=3,
             )
 
-        # Step 5: Build feature analysis
+        # Step 5: Build feature analysis with RRF ranks and similarity
         prior_art = []
-        for doc in ranked_docs[:5]:  # Top 5 per feature in the matrix
+        for doc in ranked_docs[:5]:
             prior_art.append(
                 FeatureEvidence(
                     title=doc.get("title", "Untitled"),
@@ -118,10 +219,14 @@ async def full_analysis(submission: IdeaSubmission):
                     similarity=round(doc.get("similarity_score", 0.0), 3),
                     evidence_sentence=doc.get("evidence_sentence"),
                     url=doc.get("url"),
+                    rrf_score=doc.get("rrf_score"),
+                    keyword_score=doc.get("keyword_score"),
+                    rank_rrf=doc.get("rank_rrf"),
+                    rank_semantic=doc.get("rank_semantic"),
+                    rank_keyword=doc.get("rank_keyword"),
                 )
             )
 
-        # Determine coverage level based on top similarity scores
         coverage = _determine_coverage(ranked_docs)
 
         feature_analyses.append(
@@ -134,7 +239,26 @@ async def full_analysis(submission: IdeaSubmission):
             )
         )
 
-    # Step 6: Build the feature matrix
+        feature_audits.append(
+            FeatureSearchAudit(
+                feature_id=feature.id,
+                feature_description=feature.description,
+                queries_run=queries_run,
+                total_candidates_found=len(all_docs),
+                total_after_fusion=len(ranked_docs),
+            )
+        )
+
+    # Step 6: Build Search Methodology audit trail & Feature Matrix
+    methodology = SearchMethodology(
+        apis_queried=["OpenAlex (250M+ Academic Works)", "arXiv (Preprints)", "USPTO (US Patents)"],
+        api_health=api_health,
+        hybrid_fusion="Reciprocal Rank Fusion (RRF, k=60) combining Okapi BM25 and all-MiniLM-L6-v2 embeddings",
+        total_documents_scanned=total_documents_scanned,
+        feature_audits=feature_audits,
+        timestamp=datetime.now(timezone.utc),
+    )
+
     matrix = FeatureMatrix(
         innovation_id=innovation_id,
         title=structured.title,
@@ -142,6 +266,7 @@ async def full_analysis(submission: IdeaSubmission):
         features=feature_analyses,
         search_sources=["OpenAlex (250M+ academic works)", "arXiv (preprints)", "USPTO (US patents)"],
         search_timestamp=datetime.now(timezone.utc),
+        methodology=methodology,
     )
 
     # Step 7: Create provenance record
@@ -149,7 +274,7 @@ async def full_analysis(submission: IdeaSubmission):
         innovation_id=innovation_id,
         version=1,
         innovation_data={
-            "raw_input": submission.raw_text,
+            "raw_input": raw_text,
             "structured": structured.model_dump(),
         },
     )
@@ -180,7 +305,7 @@ async def full_analysis(submission: IdeaSubmission):
     # Step 10: Generate full report
     report = report_gen.generate_report(
         innovation_id=innovation_id,
-        raw_input=submission.raw_text,
+        raw_input=raw_text,
         structured_idea=structured.model_dump(),
         feature_matrix=matrix.model_dump(),
         scores=raw_scores,
@@ -188,19 +313,49 @@ async def full_analysis(submission: IdeaSubmission):
         provenance=provenance_record.model_dump(),
     )
 
-    # Cache report for retrieval via GET /api/report/{id}
+    # Cache report for retrieval
     from routers.report import cache_report
     cache_report(innovation_id, report)
 
-    return AnalysisResponse(
-        innovation_id=innovation_id,
-        structured_idea=structured,
-        feature_matrix=matrix,
-        scores=assessment_scores,
-        assessment_summary=assessment_summary,
-        report=report,
-        provenance=provenance_record,
-    )
+    return {
+        "innovation_id": innovation_id,
+        "structured_idea": structured,
+        "feature_matrix": matrix,
+        "raw_scores": raw_scores,
+        "assessment_scores": assessment_scores,
+        "assessment_summary": assessment_summary,
+        "report": report,
+        "provenance_record": provenance_record,
+        "methodology": methodology,
+        "guardrail_result": GuardrailValidationResponse(**guardrail_eval),
+    }
+
+
+@router.post("", response_model=AnalysisResponse)
+async def full_analysis(submission: IdeaSubmission):
+    """
+    Full analysis pipeline: Structure → Search → Rank → Evidence → Matrix → Provenance
+    This is the core endpoint of InnovX.
+    """
+    try:
+        res = await run_analysis_pipeline(submission.raw_text)
+        return AnalysisResponse(
+            innovation_id=res["innovation_id"],
+            structured_idea=res["structured_idea"],
+            feature_matrix=res["feature_matrix"],
+            scores=res["assessment_scores"],
+            assessment_summary=res["assessment_summary"],
+            report=res["report"],
+            provenance=res["provenance_record"],
+            methodology=res.get("methodology"),
+            guardrail_result=res.get("guardrail_result"),
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Analysis pipeline failed: {str(e)}")
+
+
 
 
 def _determine_coverage(ranked_docs: list[dict]) -> CoverageLevel:
