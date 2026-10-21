@@ -2,6 +2,7 @@
 Analysis Router — The main endpoint that chains the full InnovX pipeline:
 Idea → Structure → Search → Rank → Evidence → Feature Matrix
 """
+import asyncio
 import uuid
 from datetime import datetime, timezone
 
@@ -109,88 +110,66 @@ async def run_analysis_pipeline(raw_text: str, custom_innovation_id: str | None 
         queries_run = []
         primary_query = feature.search_queries[0] if feature.search_queries else feature.description
 
-        # OpenAlex
-        try:
-            openalex_results = await search_openalex.search_for_feature(
-                feature.description, feature.search_queries
-            )
-            all_docs.extend(openalex_results)
-            queries_run.append(
-                ApiQueryAudit(
-                    source="openalex",
-                    status="ok",
-                    query=primary_query,
-                    results_count=len(openalex_results),
+        # Step 2: Concurrently query OpenAlex, arXiv, and USPTO for this feature (3x speedup)
+        async def _query_openalex():
+            try:
+                res = await search_openalex.search_for_feature(
+                    feature.description, feature.search_queries
                 )
-            )
-        except Exception as e:
-            print(f"OpenAlex search failed for {feature.id}: {e}")
-            api_health["openalex"] = "degraded"
-            queries_run.append(
-                ApiQueryAudit(
-                    source="openalex",
-                    status="degraded",
-                    query=primary_query,
-                    results_count=0,
-                    error_message=str(e),
-                )
-            )
+                return "openalex", res, None
+            except Exception as e:
+                return "openalex", [], str(e)
 
-        # arXiv
-        try:
-            arxiv_results = await search_arxiv.search_for_feature(
-                feature.description, feature.search_queries
-            )
-            all_docs.extend(arxiv_results)
-            queries_run.append(
-                ApiQueryAudit(
-                    source="arxiv",
-                    status="ok",
-                    query=primary_query,
-                    results_count=len(arxiv_results),
+        async def _query_arxiv():
+            try:
+                res = await search_arxiv.search_for_feature(
+                    feature.description, feature.search_queries
                 )
-            )
-        except Exception as e:
-            print(f"arXiv search failed for {feature.id}: {e}")
-            api_health["arxiv"] = "degraded"
-            queries_run.append(
-                ApiQueryAudit(
-                    source="arxiv",
-                    status="degraded",
-                    query=primary_query,
-                    results_count=0,
-                    error_message=str(e),
-                )
-            )
+                return "arxiv", res, None
+            except Exception as e:
+                return "arxiv", [], str(e)
 
-        # USPTO
-        try:
-            patent_results = await search_patents.search_for_feature(
-                feature.description, feature.search_queries
-            )
-            all_docs.extend(patent_results)
-            queries_run.append(
-                ApiQueryAudit(
-                    source="uspto",
-                    status="ok",
-                    query=primary_query,
-                    results_count=len(patent_results),
+        async def _query_uspto():
+            try:
+                res = await search_patents.search_for_feature(
+                    feature.description, feature.search_queries
                 )
-            )
-        except Exception as e:
-            print(f"USPTO search failed for {feature.id}: {e}")
-            api_health["uspto"] = "degraded"
-            queries_run.append(
-                ApiQueryAudit(
-                    source="uspto",
-                    status="degraded",
-                    query=primary_query,
-                    results_count=0,
-                    error_message=str(e),
+                return "uspto", res, None
+            except Exception as e:
+                return "uspto", [], str(e)
+
+        search_responses = await asyncio.gather(
+            _query_openalex(),
+            _query_arxiv(),
+            _query_uspto(),
+        )
+
+        for src, res_list, err in search_responses:
+            if err:
+                print(f"[WARN] {src} search failed for {feature.id}: {err}")
+                api_health[src] = "degraded"
+                queries_run.append(
+                    ApiQueryAudit(
+                        source=src,
+                        status="degraded",
+                        query=primary_query,
+                        results_count=0,
+                        error_message=err,
+                    )
                 )
-            )
+            else:
+                all_docs.extend(res_list)
+                queries_run.append(
+                    ApiQueryAudit(
+                        source=src,
+                        status="ok",
+                        query=primary_query,
+                        results_count=len(res_list),
+                    )
+                )
 
         total_documents_scanned += len(all_docs)
+
 
         # Step 3: Hybrid Ranking with Reciprocal Rank Fusion (RRF, k=60)
         ranked_docs = similarity.reciprocal_rank_fusion(

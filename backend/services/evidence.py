@@ -79,22 +79,36 @@ async def extract_evidence_batch(
 ) -> list[dict]:
     """
     Extract evidence for the top-k most similar documents for a given feature.
-    Adds 'evidence_sentence' field to each document.
-
-    Only runs evidence extraction on the top_k documents to save API calls.
+    Runs extraction concurrently with asyncio.gather() for maximum throughput.
     """
-    results = []
-    for doc in documents[:top_k]:
+    import asyncio
+
+    top_docs = documents[:top_k]
+    remaining_docs = documents[top_k:]
+
+    async def _safe_extract(doc: dict) -> dict:
         abstract = doc.get(abstract_key, "")
-        evidence = await extract_evidence(feature_description, abstract) if abstract else None
+        sentence = None
+        if abstract:
+            try:
+                sentence = await extract_evidence(feature_description, abstract)
+            except Exception as e:
+                print(f"[WARN] Evidence extraction failed for doc: {e}")
         doc_copy = doc.copy()
-        doc_copy["evidence_sentence"] = evidence
-        results.append(doc_copy)
+        doc_copy["evidence_sentence"] = sentence
+        return doc_copy
+
+    if top_docs:
+        extracted_top = await asyncio.gather(*(_safe_extract(doc) for doc in top_docs))
+        results = list(extracted_top)
+    else:
+        results = []
 
     # For remaining docs beyond top_k, skip evidence extraction
-    for doc in documents[top_k:]:
+    for doc in remaining_docs:
         doc_copy = doc.copy()
         doc_copy["evidence_sentence"] = None
         results.append(doc_copy)
 
     return results
+
