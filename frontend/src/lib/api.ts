@@ -55,7 +55,7 @@ export interface SearchMethodology {
 }
 
 export interface GuardrailValidationResponse {
-  status: "valid" | "short_input" | "non_technical" | "overly_broad";
+  status: "valid" | "short_input" | "non_technical" | "overly_broad" | "security_violation";
   is_valid: boolean;
   headline: string;
   feedback_message: string;

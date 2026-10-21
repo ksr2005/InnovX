@@ -77,7 +77,10 @@ async def structure_idea(raw_text: str) -> StructuredIdea:
     )
 
     import asyncio
-    prompt = f"{STRUCTURING_PROMPT}\n\nUSER'S IDEA:\n{raw_text}"
+    from services.security import wrap_safe_prompt_boundaries
+
+    safe_block = wrap_safe_prompt_boundaries(raw_text, "USER_INNOVATION_INPUT")
+    prompt = f"{STRUCTURING_PROMPT}\n\n{safe_block}"
 
     response = await asyncio.to_thread(model.generate_content, prompt)
     result_text = response.text

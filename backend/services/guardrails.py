@@ -164,10 +164,36 @@ async def evaluate_submission(raw_text: str) -> dict:
     Evaluate user idea text against guardrails.
     Returns diagnostic status, validity, feedback message, clarifying prompts, and suggested template.
     """
-    clean = raw_text.strip()
+    # Fast-path 0: Enterprise Security & Prompt Injection Defense
+    from services.security import detect_prompt_injection, sanitize_text
+    is_injection, injection_reason = detect_prompt_injection(raw_text)
+    if is_injection:
+        return {
+            "status": "security_violation",
+            "is_valid": False,
+            "headline": "Prompt Injection / Adversarial Pattern Shielded",
+            "feedback_message": (
+                "Your submission was flagged by the InnovX security guard: "
+                f"{injection_reason}. "
+                "To protect LLM pipeline integrity, system override instructions and adversarial prompts are blocked. "
+                "Please describe your technical engineering invention directly without meta-prompts."
+            ),
+            "clarifying_questions": [
+                "What specific engineering system or algorithm does this invention utilize?",
+                "What physical hardware, circuit, or software components are involved?",
+                "What measurable technical problem does the invention solve?",
+            ],
+            "suggested_template": (
+                "An engineering apparatus for [specific application], comprising a [component A] "
+                "configured to [action] and a [component B] executing [mechanism] to achieve [outcome]."
+            ),
+            "detected_domain": "Security / Adversarial Guard",
+        }
+
+    clean = sanitize_text(raw_text)
     words = re.findall(r"\b\w+\b", clean)
 
-    # Fast-path: Check minimum length (< 50 chars or < 12 words)
+    # Fast-path 1: Check minimum length (< 50 chars or < 12 words)
     if len(clean) < 50 or len(words) < 12:
         return _heuristic_fallback(clean)
 

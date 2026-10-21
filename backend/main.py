@@ -8,7 +8,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from contextlib import asynccontextmanager
 
+import uuid
+
 from fastapi import FastAPI, Request, Response
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
@@ -17,6 +20,12 @@ env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
 from routers import analyze, search, report, innovations, auth, marketplace, campaigns
+from services.security import (
+    rate_limiter,
+    detect_malicious_reconnaissance,
+    is_payload_oversized,
+    SECURITY_HEADERS,
+)
 
 START_TIME = datetime.now(timezone.utc)
 
@@ -64,15 +73,91 @@ app.add_middleware(
 )
 
 
-# ─── Security Headers Middleware ─────────────────────────────────
+# ─── Enterprise Security & Traffic Inspection Middleware ─────────
 @app.middleware("http")
-async def add_security_headers(request: Request, call_next):
+async def security_and_rate_limit_middleware(request: Request, call_next):
+    # 1. Scanner & Reconnaissance Detection
+    user_agent = request.headers.get("user-agent", "")
+    path = request.url.path
+    is_suspicious, reason = detect_malicious_reconnaissance(user_agent, path)
+    if is_suspicious:
+        return JSONResponse(
+            status_code=403,
+            content={
+                "error": "Forbidden",
+                "message": "Automated security scanning tool or suspicious probe signature detected.",
+                "reason": reason,
+                "status_code": 403,
+            },
+        )
+
+    # 2. Request Body Size Enforcer (Memory Exhaustion / Large Payload Defense)
+    content_length = request.headers.get("content-length")
+    if is_payload_oversized(content_length):
+        return JSONResponse(
+            status_code=413,
+            content={
+                "error": "Payload Too Large",
+                "message": "Request payload exceeds maximum allowed size (2MB).",
+                "status_code": 413,
+            },
+        )
+
+    # 3. Client IP Extraction & Sliding-Window Rate Limiting
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        client_ip = forwarded.split(",")[0].strip()
+    else:
+        client_ip = request.client.host if request.client else "127.0.0.1"
+
+    allowed, retry_after, limit, remaining = rate_limiter.is_allowed(client_ip, path)
+    if not allowed:
+        return JSONResponse(
+            status_code=429,
+            content={
+                "error": "Too Many Requests",
+                "message": f"Rate limit exceeded for endpoint category. Please retry in {retry_after} seconds.",
+                "retry_after": retry_after,
+                "status_code": 429,
+            },
+            headers={
+                "Retry-After": str(retry_after),
+                "X-RateLimit-Limit": str(limit),
+                "X-RateLimit-Remaining": "0",
+            },
+        )
+
+    # 4. Process Request
     response: Response = await call_next(request)
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
+
+    # 5. Inject OWASP Security Headers & Rate Limit Telemetry
+    for header, value in SECURITY_HEADERS.items():
+        response.headers[header] = value
+
+    response.headers["X-RateLimit-Limit"] = str(limit)
+    response.headers["X-RateLimit-Remaining"] = str(remaining)
+
     return response
+
+
+# ─── Global Information Disclosure Shield & Exception Masking ────
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    from fastapi import HTTPException
+    if isinstance(exc, HTTPException):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+    incident_id = str(uuid.uuid4())[:8]
+    print(f"[SECURITY ALERT] Unhandled Exception [Incident #{incident_id}] on {request.method} {request.url.path}: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "Internal Server Error",
+            "message": "An unexpected server error occurred. The incident has been recorded with a secure audit ID.",
+            "incident_id": incident_id,
+            "status_code": 500,
+        },
+    )
 
 
 # ─── Register Application Routers ───────────────────────────────
@@ -106,6 +191,7 @@ async def health_check():
         "services": {
             "embedding_model": "all-MiniLM-L6-v2 (384-dim, local CPU)",
             "hybrid_ranking": "Reciprocal Rank Fusion (RRF, k=60)",
+            "security_shield": "Sliding-Window Rate Limiting, OWASP Strict Headers & Scanner Shield Active",
             "gemini_configured": has_gemini,
             "supabase_configured": has_supabase,
         },
@@ -120,5 +206,7 @@ async def root():
         "docs": "/docs",
         "health": "/health",
         "status": "operational",
+        "security": "hardened",
     }
+
 

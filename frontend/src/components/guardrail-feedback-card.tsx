@@ -13,30 +13,39 @@ export function GuardrailFeedbackCard({
   onApplyTemplate,
   onDismiss,
 }: GuardrailFeedbackCardProps) {
+  const isSecurity = feedback.status === "security_violation";
   const isNonTech = feedback.status === "non_technical";
   const isBroad = feedback.status === "overly_broad";
   const isShort = feedback.status === "short_input";
 
-  const borderColor = isNonTech
+  const borderColor = isSecurity
+    ? "border-red-500/50"
+    : isNonTech
     ? "border-amber-500/40"
     : isBroad
     ? "border-cyan-500/40"
     : "border-yellow-500/40";
 
-  const bgGradient = isNonTech
+  const bgGradient = isSecurity
+    ? "from-red-950/30 via-card to-background"
+    : isNonTech
     ? "from-amber-950/20 via-card to-background"
     : isBroad
     ? "from-cyan-950/20 via-card to-background"
     : "from-yellow-950/20 via-card to-background";
 
-  const badgeColor = isNonTech
+  const badgeColor = isSecurity
+    ? "bg-red-500/20 text-red-400 border-red-500/40 font-semibold"
+    : isNonTech
     ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
     : isBroad
     ? "bg-cyan-500/15 text-cyan-400 border-cyan-500/30"
     : "bg-yellow-500/15 text-yellow-400 border-yellow-500/30";
 
-  const icon = isNonTech ? "💡" : isBroad ? "🔭" : "📝";
-  const categoryLabel = isNonTech
+  const icon = isSecurity ? "🛡️" : isNonTech ? "💡" : isBroad ? "🔭" : "📝";
+  const categoryLabel = isSecurity
+    ? "Adversarial Prompt Shield Active"
+    : isNonTech
     ? "Non-Technical Concept Diagnostic"
     : isBroad
     ? "High-Level Vision Clarification"

@@ -118,6 +118,26 @@ export function IdeaInput({ onSubmit, isLoading, onExploreSample, presetText }: 
         </div>
       </div>
 
+      {/* Enterprise Security Shield Banner */}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 rounded-xl border border-border/50 bg-muted/20 text-[11px] text-muted-foreground font-mono">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span className="text-foreground font-medium">Security Guard Active:</span>
+          <span>Sliding-Window Rate Limiting</span>
+          <span className="text-border hidden sm:inline">•</span>
+          <span className="hidden sm:inline">Adversarial Prompt Shield</span>
+          <span className="text-border hidden sm:inline">•</span>
+          <span className="hidden sm:inline">OWASP CSP & HSTS</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-emerald-400 text-[11px] font-semibold">
+          <span>🛡️</span>
+          <span>Resilient & Tamper-Proof</span>
+        </div>
+      </div>
+
       {/* Quick Prompt Suggestions Chips (Subtask 24-1) */}
       <div className="space-y-2 pt-1">
         <div className="flex items-center justify-between text-xs text-muted-foreground px-1">

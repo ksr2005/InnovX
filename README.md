@@ -156,7 +156,12 @@ python test_search_day25.py
 
 # 4. Week 3 Post-Report Creator Pathways Master Suite
 python test_week3_end_to_end.py
+
+# 5. Enterprise Security Hardening & Attack Resilience Suite
+python test_security_resilience.py
 ```
+
+> For deep architectural details on our defense-in-depth model, see **[SECURITY_ARCHITECTURE.md](SECURITY_ARCHITECTURE.md)**.
 
 ---
 
