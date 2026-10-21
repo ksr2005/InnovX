@@ -67,6 +67,17 @@ export function Navbar() {
               </svg>
               My Portfolio
             </Link>
+            <Link
+              href="/presentation"
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all ${
+                pathname === "/presentation"
+                  ? "bg-secondary text-foreground font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }`}
+            >
+              <span>📊</span>
+              Presentation Deck
+            </Link>
           </nav>
         </div>
 
@@ -173,6 +184,18 @@ export function Navbar() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
             My Portfolio (Vault)
+          </Link>
+          <Link
+            href="/presentation"
+            onClick={() => setMobileMenuOpen(false)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${
+              pathname === "/presentation"
+                ? "bg-secondary text-foreground font-semibold"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span>📊</span>
+            Presentation Deck
           </Link>
           {user && (
             <div className="pt-2 border-t border-border/40">
