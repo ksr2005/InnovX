@@ -44,6 +44,27 @@ async def search_patent_db(req: SearchQuery):
     """Search USPTO patent database."""
     try:
         results = await search_patents.search_patents(req.query, per_page=req.max_results)
-        return {"total": len(results), "results": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Patent search failed: {str(e)}")
+
+
+class PatentCompareRequest(BaseModel):
+    creator_title: str
+    creator_features: list = []
+    competitor_title: str
+    competitor_claims_or_text: str
+
+
+@router.post("/compare")
+async def compare_patents(req: PatentCompareRequest):
+    """
+    Compare creator invention features claim-by-claim against a competitor patent.
+    """
+    from services.patent_comparator import compare_invention_against_competitor
+    return compare_invention_against_competitor(
+        creator_title=req.creator_title,
+        creator_features=req.creator_features,
+        competitor_title=req.competitor_title,
+        competitor_claims_or_text=req.competitor_claims_or_text,
+    )
+

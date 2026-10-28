@@ -18,6 +18,11 @@ The more technical specificity and mechanical details you provide, the deeper th
 
 export function IdeaInput({ onSubmit, isLoading, onExploreSample, presetText }: IdeaInputProps) {
   const [text, setText] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const [interimText, setInterimText] = useState("");
+  const [speechError, setSpeechError] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
 
   useEffect(() => {
     if (presetText) {
@@ -25,12 +30,112 @@ export function IdeaInput({ onSubmit, isLoading, onExploreSample, presetText }: 
     }
   }, [presetText]);
 
+  // Clean up speech recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionInstance) {
+        try {
+          recognitionInstance.stop();
+        } catch {
+          // ignore cleanup errors
+        }
+      }
+    };
+  }, [recognitionInstance]);
+
+  const toggleVoiceRecording = () => {
+    if (isListening) {
+      if (recognitionInstance) {
+        try {
+          recognitionInstance.stop();
+        } catch {
+          // ignore
+        }
+      }
+      setIsListening(false);
+      setInterimText("");
+      return;
+    }
+
+    setSpeechError(null);
+    // Check for standard or webkit SpeechRecognition
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognition =
+      (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any }).SpeechRecognition ||
+      (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any }).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setSpeechError("Speech recognition is not supported in this browser. Please use Google Chrome, Microsoft Edge, or Safari.");
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      recognition.onresult = (event: any) => {
+        let currentInterim = "";
+        let finalChunk = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalChunk += transcript + " ";
+          } else {
+            currentInterim += transcript;
+          }
+        }
+
+        if (finalChunk) {
+          setText((prev) => (prev ? prev.trim() + " " + finalChunk.trim() : finalChunk.trim()));
+        }
+        setInterimText(currentInterim);
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      recognition.onerror = (event: any) => {
+        if (event.error === "not-allowed" || event.error === "permission-denied") {
+          setSpeechError("Microphone access was denied. Please allow microphone permissions in your browser.");
+        } else if (event.error !== "no-speech") {
+          setSpeechError(`Voice input error: ${event.error}`);
+        }
+        setIsListening(false);
+        setInterimText("");
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+        setInterimText("");
+      };
+
+      recognition.start();
+      setRecognitionInstance(recognition);
+    } catch {
+      setSpeechError("Failed to access microphone. Please ensure microphone permissions are granted.");
+      setIsListening(false);
+    }
+  };
+
   const handleSubmit = () => {
+    if (isListening && recognitionInstance) {
+      try {
+        recognitionInstance.stop();
+      } catch {
+        // ignore
+      }
+      setIsListening(false);
+    }
     if (text.trim().length >= 10) {
       onSubmit(text.trim());
     }
   };
-
 
   const handleSelectSuggestion = (promptText: string) => {
     setText(promptText);
@@ -41,8 +146,29 @@ export function IdeaInput({ onSubmit, isLoading, onExploreSample, presetText }: 
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-4">
+      {/* Speech Error Banner if any */}
+      {speechError && (
+        <div className="flex items-center justify-between gap-2 p-3 text-xs rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <span>⚠️</span>
+            <span>{speechError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSpeechError(null)}
+            className="text-amber-400 hover:text-white text-xs px-2 py-0.5 rounded border border-amber-500/30"
+          >
+            ✕ Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Main Glassmorphic Input Box */}
-      <div className="border border-border/80 rounded-2xl overflow-hidden bg-card/90 backdrop-blur-md shadow-xl transition-all focus-within:border-emerald-500/50 focus-within:ring-2 focus-within:ring-emerald-500/20">
+      <div className={`border rounded-2xl overflow-hidden bg-card/90 backdrop-blur-md shadow-xl transition-all ${
+        isListening
+          ? "border-rose-500/60 ring-2 ring-rose-500/30"
+          : "border-border/80 focus-within:border-emerald-500/50 focus-within:ring-2 focus-within:ring-emerald-500/20"
+      }`}>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -52,6 +178,38 @@ export function IdeaInput({ onSubmit, isLoading, onExploreSample, presetText }: 
           className="w-full p-5 sm:p-6 bg-transparent text-foreground placeholder:text-muted-foreground/50 
                      resize-none focus:outline-none text-sm sm:text-base leading-relaxed disabled:opacity-50"
         />
+
+        {/* Live Speech Recognition Waveform & Transcript Bar */}
+        {isListening && (
+          <div className="px-5 sm:px-6 py-2.5 bg-rose-950/30 border-t border-rose-500/30 flex items-center justify-between gap-3 text-xs animate-in fade-in">
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <span className="relative flex h-2.5 w-2.5 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+              </span>
+              {/* Soundwave Bars */}
+              <div className="flex items-center gap-0.5 shrink-0">
+                <span className="w-1 h-2.5 bg-rose-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                <span className="w-1 h-4 bg-rose-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                <span className="w-1 h-3 bg-rose-400 rounded-full animate-bounce"></span>
+                <span className="w-1 h-2 bg-rose-400 rounded-full animate-bounce [animation-delay:-0.4s]"></span>
+              </div>
+              <span className="font-semibold text-rose-300 shrink-0 font-mono text-[11px]">
+                Listening live:
+              </span>
+              <span className="text-foreground/90 italic truncate">
+                {interimText || "Speak now, transcribing technical description..."}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={toggleVoiceRecording}
+              className="text-[11px] font-semibold text-rose-300 hover:text-white px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 shrink-0 transition-colors cursor-pointer"
+            >
+              Done Dictating ✓
+            </button>
+          </div>
+        )}
 
         {/* Input Footer Bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 sm:px-6 py-3.5 bg-muted/40 border-t border-border/60">
@@ -79,23 +237,40 @@ export function IdeaInput({ onSubmit, isLoading, onExploreSample, presetText }: 
             )}
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+            {/* Speech-to-Innovation Microphone Button */}
+            <button
+              type="button"
+              onClick={toggleVoiceRecording}
+              disabled={isLoading}
+              title={isListening ? "Stop live speech dictation" : "Dictate your invention using speech recognition"}
+              className={`px-3 py-2 text-xs font-semibold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
+                isListening
+                  ? "bg-rose-500/20 text-rose-300 border-rose-500/40 hover:bg-rose-500/30 animate-pulse"
+                  : "border-border/80 hover:bg-muted text-foreground hover:border-emerald-500/40"
+              }`}
+            >
+              <span className="text-sm">{isListening ? "⏹️" : "🎙️"}</span>
+              <span>{isListening ? "Recording..." : "Voice Dictate"}</span>
+            </button>
+
             {onExploreSample && (
               <button
                 type="button"
                 onClick={onExploreSample}
                 disabled={isLoading}
-                className="px-3.5 py-2 text-xs font-semibold rounded-xl border border-border/80 hover:bg-muted text-foreground transition-all flex items-center gap-1.5"
+                className="px-3.5 py-2 text-xs font-semibold rounded-xl border border-border/80 hover:bg-muted text-foreground transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <span>👁️</span>
-                <span>Tour Sample Report</span>
+                <span className="hidden sm:inline">Tour Sample Report</span>
+                <span className="sm:hidden">Sample</span>
               </button>
             )}
 
             <button
               onClick={handleSubmit}
               disabled={!isValid || isLoading}
-              className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs sm:text-sm font-semibold 
+              className="px-5 sm:px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs sm:text-sm font-semibold 
                          rounded-xl shadow-md hover:shadow-emerald-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed
                          flex items-center gap-2 shrink-0 cursor-pointer"
             >

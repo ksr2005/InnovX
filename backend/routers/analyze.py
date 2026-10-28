@@ -34,8 +34,33 @@ from services import provenance
 from services import scoring
 from services import report_gen
 from services import guardrails
+from services import grant_matcher
+from pydantic import BaseModel
 
 router = APIRouter()
+
+
+class GrantMatchingRequest(BaseModel):
+    title: str
+    domain: str
+    problem_statement: str
+    proposed_solution: str
+    key_features: list = []
+
+
+@router.post("/grants")
+async def match_grants(request: GrantMatchingRequest):
+    """
+    Match an innovation's technical domain and problem statement to Federal SBIR/STTR topics
+    and specialized deep-tech venture capital funds.
+    """
+    return grant_matcher.match_grants_and_capital(
+        title=request.title,
+        domain=request.domain,
+        problem_statement=request.problem_statement,
+        proposed_solution=request.proposed_solution,
+        key_features=request.key_features,
+    )
 
 
 @router.post("/validate", response_model=GuardrailValidationResponse)

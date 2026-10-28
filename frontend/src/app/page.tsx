@@ -20,6 +20,10 @@ import { AuthModal } from "@/components/auth-modal";
 import { HowItWorks } from "@/components/how-it-works";
 import { LegalTransparency } from "@/components/legal-transparency";
 import { GuardrailFeedbackCard } from "@/components/guardrail-feedback-card";
+import { PriorArtRadar } from "@/components/prior-art-radar";
+import { ArchitectureDiagram } from "@/components/architecture-diagram";
+import { GrantMatcherCard } from "@/components/grant-matcher-card";
+import { PatentComparatorModal } from "@/components/patent-comparator-modal";
 import { useAuth } from "@/components/auth-context";
 import { Button } from "@/components/ui/button";
 import { SAMPLE_INNOVATION_REPORT } from "@/data/sample-report";
@@ -38,6 +42,7 @@ export default function Home() {
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [showComparatorModal, setShowComparatorModal] = useState(false);
 
   const handleAnalyze = async (text: string) => {
     setLoading(true);
@@ -278,6 +283,16 @@ export default function Home() {
                     )}
                   </Button>
 
+                  {/* Compare Against Competitor Patent Button (Day 35) */}
+                  <Button
+                    onClick={() => setShowComparatorModal(true)}
+                    variant="outline"
+                    className="border-cyan-500/40 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 font-medium text-xs h-9 cursor-pointer"
+                  >
+                    <span className="mr-1.5">⚖️</span>
+                    Compare Competitor Patent
+                  </Button>
+
                   {/* Download PDF */}
                   <Button
                     onClick={() => handleDownloadPdf(result.innovation_id)}
@@ -338,6 +353,15 @@ export default function Home() {
             {/* Feature Matrix Breakdown */}
             <FeatureMatrix matrix={result.feature_matrix} />
 
+            {/* Automated System Architecture Diagram (Day 33) */}
+            <ArchitectureDiagram structuredIdea={result.structured_idea} />
+
+            {/* Interactive Prior-Art Proximity Landscape & Novelty Opportunity Radar (Day 32) */}
+            <PriorArtRadar
+              featureMatrix={result.feature_matrix}
+              innovationTitle={result.structured_idea.title}
+            />
+
             {/* Assessment Scores */}
             {result.scores && result.assessment_summary && (
               <AssessmentView scores={result.scores} summary={result.assessment_summary} />
@@ -363,6 +387,9 @@ export default function Home() {
               <DecisionHub innovationId={result.innovation_id} />
             </div>
 
+            {/* US SBIR/STTR Federal Grant & Venture Capital Matcher (Day 34) */}
+            <GrantMatcherCard structuredIdea={result.structured_idea} />
+
             {/* Search Limitations */}
             <div className="border border-border/60 rounded-xl p-5 bg-card/60 space-y-2 text-xs">
               <h4 className="font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
@@ -383,6 +410,15 @@ export default function Home() {
 
         {/* ── LEGAL TRANSPARENCY & STATUTORY DISCLAIMERS (Subtask 24-4) ── */}
         <LegalTransparency />
+
+        {/* ── CLAIM-BY-CLAIM COMPETITOR PATENT COMPARATOR MODAL (Day 35) ── */}
+        {result && (
+          <PatentComparatorModal
+            structuredIdea={result.structured_idea}
+            isOpen={showComparatorModal}
+            onClose={() => setShowComparatorModal(false)}
+          />
+        )}
       </main>
 
       {/* ── FOOTER ── */}

@@ -51,6 +51,13 @@ def cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
     return float(np.dot(a, b))
 
 
+def compute_similarity(text_a: str, text_b: str) -> float:
+    """Compute semantic cosine similarity between two text strings."""
+    model = get_model()
+    embs = model.encode([text_a, text_b], normalize_embeddings=True)
+    return float(np.dot(embs[0], embs[1]))
+
+
 def compute_similarity_matrix(
     feature_texts: list[str],
     document_texts: list[str],

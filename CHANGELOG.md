@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] — 2026-10-28 (Phase 6: Advanced Intelligence & Ecosystem Extensions)
+
+### 🌟 Major Highlights & Ecosystem Expansion
+InnovX v1.1.0 delivers 5 major intelligence and commercial ecosystem extensions (Days 31–35), expanding the platform from analysis into deep-tech capital allocation, visual engineering workflows, and interactive competitor claim analysis.
+
+- **Day 31 — Speech-to-Innovation (Native Web Speech Voice Dictation):** Creators can dictate complex technical ideas naturally via browser Web Speech API (`webkitSpeechRecognition`), featuring a 4-bar dynamic audio equalizer soundwave, interim preview, and automatic transcript append.
+- **Day 32 — Interactive Prior-Art Landscape Scatter / Radar Map:** Interactive SVG-based 2D proximity coordinate plot (Semantic Similarity 40–100% vs. Publication Year 2017–2026) and radial radar view across USPTO patents, arXiv preprints, and OpenAlex papers, highlighted with a "Novelty Opportunity Zone" identifying unclaimed technical white space.
+- **Day 33 — Auto-Generated System Architecture Diagram (Mermaid Flowchart):** Gemini structuring decomposes inventions into 3-tier system architecture flowcharts (Data Ingestion → Computational Engine → Output Delivery) rendered via dynamic SVG pipelines with 1-click Mermaid syntax copying.
+- **Day 34 — US SBIR / STTR Government Grant & Deep-Tech VC Matcher:** Evaluates inventions against Federal SBIR/STTR non-dilutive programs (NSF, DARPA, DOE, NIH, NASA with $2,275,000+ pooled awards) and specialized venture capital firms (Lux Capital, Khosla Ventures, DCVC, Eclipse), providing 1-click customized Grant Proposal Abstracts tailored to federal reviewers.
+- **Day 35 — Claim-by-Claim Competitor Patent Diff Comparator:** Direct claim-by-claim semantic comparison against cited patents, identifying high-risk overlaps, independent novelty differentiators, Freedom-to-Operate (FTO) rating, and MPEP-compliant design-around recommendations.
+
+---
+
 ## [1.0.0] — 2026-10-21 (Official Production Release)
 
 ### 🌟 Major Release Highlights

@@ -84,6 +84,22 @@ export const SAMPLE_INNOVATION_REPORT: AnalysisResponse = {
         "SCADA event-triggered alarm prioritization broadcast",
       ],
     },
+    architecture_diagram_mermaid: `graph TD
+  subgraph Inputs_Sensors [1. Sensing & Ingestion Layer]
+    A[Dual-Frequency Ultrasonic Array] --> S[Stereo Camera Housing]
+    S --> B[IMU & Acoustic Waveform Sensor]
+  end
+  subgraph Compute_Core [2. Edge AI & Inverse Kinematics Core]
+    B --> C[Edge Neuromorphic Signal Processor]
+    C --> D[Adaptive Quadruped Gait Controller]
+    C --> E[Acoustic Defect & Fissure Localizer]
+  end
+  subgraph Actuation_Outputs [3. Actuation, Power & Telemetry]
+    D --> F[Brushless Servo Quadruped Legs]
+    E --> G[Semantic Delta Telemetry Modem]
+    G --> H[Remote SCADA Monitoring Station]
+    I[Inductive Resonant Charging Dock] -.-> D
+  end`,
     selected_paths: ["protect", "build"],
   },
   feature_matrix: {

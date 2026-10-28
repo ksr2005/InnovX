@@ -25,6 +25,7 @@ export interface StructuredIdea {
   key_features: TechnicalFeature[];
   target_applications: string[];
   technical_components: TechnicalComponents;
+  architecture_diagram_mermaid?: string | null;
   selected_paths?: PathwayType[];
   development_notes?: Array<{ id: string; title: string; content: string; created_at: string; updated_at?: string | null }>;
 }
@@ -195,6 +196,108 @@ export async function structureIdea(rawText: string): Promise<StructuredIdea> {
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: "Structuring failed" }));
     throw new Error(error.detail || `Structuring failed with status ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export interface MatchedGrant {
+  id: string;
+  agency: string;
+  program: string;
+  topic_name: string;
+  award_amount: string;
+  phase2_potential: string;
+  equity_taken: string;
+  deadline: string;
+  fit_score: number;
+  why_fit: string;
+  application_portal: string;
+  eligibility: string;
+}
+
+export interface MatchedVC {
+  firm: string;
+  stage: string;
+  thesis: string;
+  portfolio_examples: string[];
+  fit_score: number;
+  website: string;
+}
+
+export interface GrantMatchingResponse {
+  matched_grants: MatchedGrant[];
+  matched_vcs: MatchedVC[];
+  tailored_grant_abstract: string;
+  total_non_dilutive_potential: string;
+  recommended_first_step: string;
+}
+
+export async function matchInnovationGrants(payload: {
+  title: string;
+  domain: string;
+  problem_statement: string;
+  proposed_solution: string;
+  key_features?: unknown[];
+}): Promise<GrantMatchingResponse> {
+  const response = await fetch(`${API_BASE}/api/analyze/grants`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Grant matching failed" }));
+    throw new Error(error.detail || `Grant matching failed with status ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export interface OverlappingFeature {
+  feature_id: string;
+  feature_description: string;
+  similarity_score: number;
+  risk_level: string;
+  analysis: string;
+}
+
+export interface DifferentiatingFeature {
+  feature_id: string;
+  feature_description: string;
+  similarity_score: number;
+  novelty_signal: string;
+  analysis: string;
+}
+
+export interface PatentCompareResponse {
+  creator_title: string;
+  competitor_title: string;
+  overall_overlap_percentage: number;
+  risk_rating: string;
+  risk_color: string;
+  risk_summary: string;
+  overlapping_features: OverlappingFeature[];
+  differentiating_features: DifferentiatingFeature[];
+  design_around_recommendations: string[];
+  freedom_to_operate_index: number;
+}
+
+export async function compareCompetitorPatent(payload: {
+  creator_title: string;
+  creator_features: unknown[];
+  competitor_title: string;
+  competitor_claims_or_text: string;
+}): Promise<PatentCompareResponse> {
+  const response = await fetch(`${API_BASE}/api/search/compare`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Patent comparison failed" }));
+    throw new Error(error.detail || `Patent comparison failed with status ${response.status}`);
   }
 
   return response.json();

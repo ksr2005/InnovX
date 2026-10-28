@@ -116,6 +116,10 @@ class StructuredIdea(BaseModel):
     )
     target_applications: list[str] = Field(default_factory=list)
     technical_components: TechnicalComponents = Field(default_factory=TechnicalComponents)
+    architecture_diagram_mermaid: Optional[str] = Field(
+        default=None,
+        description="Auto-generated Mermaid.js system architecture flowchart definition",
+    )
 
 
 # ─── Search Results ──────────────────────────────────────

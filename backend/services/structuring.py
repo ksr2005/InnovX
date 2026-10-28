@@ -52,10 +52,41 @@ You MUST respond with valid JSON matching this exact schema:
     "hardware": ["component1", "component2"],
     "software": ["component1", "component2"],
     "methods": ["method1", "method2"]
-  }
+  },
+  "architecture_diagram_mermaid": "graph TD\\n  Inputs[Sensor Array & Environmental Data] --> Engine[Core Algorithmic & Processing Engine]\\n  Engine --> Outputs[Actuation & Telemetry Transmission]"
 }
 
 Respond ONLY with the JSON object. No markdown, no explanations, no code blocks."""
+
+
+def generate_fallback_mermaid_diagram(title: str, components: dict, features: list) -> str:
+    """Generate a clean Mermaid.js flowchart from structured features."""
+    hw = components.get("hardware", []) if isinstance(components, dict) else []
+    sw = components.get("software", []) if isinstance(components, dict) else []
+    methods = components.get("methods", []) if isinstance(components, dict) else []
+
+    hw_label = " & ".join(hw[:2]) if hw else "Sensor Array & Data Ingestion"
+    sw_label = " & ".join(sw[:2]) if sw else "Algorithmic Pipeline Engine"
+    method_label = " & ".join(methods[:2]) if methods else "Signal Normalization & Feature Extraction"
+
+    return (
+        "graph TD\n"
+        "  subgraph Ingestion [Input & Sensing Layer]\n"
+        f"    A[\"{hw_label}\"]\n"
+        "  end\n"
+        "  subgraph Processing [Computational & Algorithmic Core]\n"
+        f"    B[\"{sw_label}\"]\n"
+        f"    C[\"{method_label}\"]\n"
+        "  end\n"
+        "  subgraph Output [Actuation & Telemetry Hub]\n"
+        "    D[\"Actuation / State Controller\"]\n"
+        "    E[\"Telemetry & Secure Provenance Vault\"]\n"
+        "  end\n"
+        "  A --> B\n"
+        "  B --> C\n"
+        "  C --> D\n"
+        "  C --> E"
+    )
 
 
 async def structure_idea(raw_text: str) -> StructuredIdea:
@@ -96,6 +127,14 @@ async def structure_idea(raw_text: str) -> StructuredIdea:
             parsed = json.loads(json_match.group(1))
         else:
             raise ValueError(f"Failed to parse Gemini response as JSON: {result_text[:500]}")
+
+    # Ensure architecture_diagram_mermaid exists
+    if not parsed.get("architecture_diagram_mermaid"):
+        parsed["architecture_diagram_mermaid"] = generate_fallback_mermaid_diagram(
+            parsed.get("title", "Technical System"),
+            parsed.get("technical_components", {}),
+            parsed.get("key_features", []),
+        )
 
     # Validate and return as Pydantic model
     structured = StructuredIdea(**parsed)
