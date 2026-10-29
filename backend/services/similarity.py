@@ -1,27 +1,74 @@
 """
 Similarity Engine — Computes semantic similarity between features and retrieved documents.
-Uses sentence-transformers for embeddings (runs locally on CPU, zero API cost).
+Uses sentence-transformers for embeddings with strict memory controls for cloud free tiers (e.g. Render 512MB RAM).
 """
+import os
 import numpy as np
-from sentence_transformers import SentenceTransformer
 from typing import Optional
 
-# Global model reference — loaded once at startup
-_model: Optional[SentenceTransformer] = None
+# Clamp multithreading and tensor memory before importing torch / tokenizers
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
+try:
+    import torch
+    torch.set_num_threads(1)
+    if hasattr(torch, "set_num_interop_threads"):
+        try:
+            torch.set_num_interop_threads(1)
+        except Exception:
+            pass
+except Exception:
+    pass
+
+# Global model reference — loaded once at startup or lazily
+_model = None
 MODEL_NAME = "all-MiniLM-L6-v2"  # 22MB, 384-dim, runs on CPU in ~10ms
 
 
+def _fallback_token_embedding(text: str, dim: int = 384) -> list[float]:
+    """Lightweight hash-based pseudo-embedding when memory is constrained or model unavailable."""
+    import hashlib
+    words = (text or "").lower().split()
+    vec = [0.0] * dim
+    if not words:
+        return vec
+    for w in words:
+        h = int(hashlib.md5(w.encode("utf-8")).hexdigest(), 16)
+        idx = h % dim
+        vec[idx] += 1.0
+    norm = np.linalg.norm(vec)
+    if norm > 0:
+        vec = (np.array(vec) / norm).tolist()
+    return vec
+
+
 def load_embedding_model():
-    """Load the embedding model into memory. Called once at startup."""
+    """Load the embedding model into memory with single-thread CPU constraints."""
     global _model
     if _model is None:
-        print(f"Loading embedding model: {MODEL_NAME}...")
-        _model = SentenceTransformer(MODEL_NAME)
-        print(f"[OK] Model loaded: {MODEL_NAME} ({_model.get_sentence_embedding_dimension()}-dim)")
+        try:
+            print(f"Loading embedding model: {MODEL_NAME}...")
+            from sentence_transformers import SentenceTransformer
+            _model = SentenceTransformer(MODEL_NAME, device="cpu")
+            try:
+                import torch
+                torch.set_num_threads(1)
+            except Exception:
+                pass
+            dim = getattr(_model, "get_sentence_embedding_dimension", lambda: 384)()
+            print(f"[OK] Model loaded: {MODEL_NAME} ({dim}-dim)")
+        except Exception as e:
+            print(f"[WARN] SentenceTransformer could not be loaded ({e}). Using lightweight lexical fallback.")
+            _model = None
     return _model
 
 
-def get_model() -> SentenceTransformer:
+def get_model():
     """Get the loaded model, loading it if necessary."""
     global _model
     if _model is None:
@@ -32,30 +79,50 @@ def get_model() -> SentenceTransformer:
 def compute_embedding(text: str) -> list[float]:
     """Compute embedding vector for a single text string."""
     model = get_model()
-    embedding = model.encode(text, normalize_embeddings=True)
-    return embedding.tolist()
+    if model is not None:
+        try:
+            embedding = model.encode(text, normalize_embeddings=True)
+            return embedding.tolist()
+        except Exception as e:
+            print(f"[WARN] Embedding encode failed ({e}), using fallback")
+    return _fallback_token_embedding(text)
 
 
 def compute_embeddings_batch(texts: list[str]) -> list[list[float]]:
-    """Compute embedding vectors for a batch of texts (more efficient)."""
+    """Compute embedding vectors for a batch of texts (memory-safe batch size)."""
     model = get_model()
-    embeddings = model.encode(texts, normalize_embeddings=True, batch_size=32)
-    return embeddings.tolist()
+    if model is not None:
+        try:
+            embeddings = model.encode(texts, normalize_embeddings=True, batch_size=8)
+            return embeddings.tolist()
+        except Exception as e:
+            print(f"[WARN] Batch encode failed ({e}), using fallback")
+    return [_fallback_token_embedding(t) for t in texts]
 
 
 def cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
     """Compute cosine similarity between two embedding vectors."""
     a = np.array(vec_a)
     b = np.array(vec_b)
-    # Vectors are already normalized by sentence-transformers, so dot product = cosine sim
-    return float(np.dot(a, b))
+    norm_a = np.linalg.norm(a)
+    norm_b = np.linalg.norm(b)
+    if norm_a == 0 or norm_b == 0:
+        return 0.0
+    return float(np.dot(a, b) / (norm_a * norm_b))
 
 
 def compute_similarity(text_a: str, text_b: str) -> float:
     """Compute semantic cosine similarity between two text strings."""
     model = get_model()
-    embs = model.encode([text_a, text_b], normalize_embeddings=True)
-    return float(np.dot(embs[0], embs[1]))
+    if model is not None:
+        try:
+            embs = model.encode([text_a, text_b], normalize_embeddings=True)
+            return float(np.dot(embs[0], embs[1]))
+        except Exception:
+            pass
+    vec_a = _fallback_token_embedding(text_a)
+    vec_b = _fallback_token_embedding(text_b)
+    return cosine_similarity(vec_a, vec_b)
 
 
 def compute_similarity_matrix(
@@ -64,17 +131,21 @@ def compute_similarity_matrix(
 ) -> list[list[float]]:
     """
     Compute pairwise cosine similarity between features and documents.
-
     Returns a matrix where matrix[i][j] = similarity between feature i and document j.
     """
     model = get_model()
+    if model is not None:
+        try:
+            feature_embeddings = model.encode(feature_texts, normalize_embeddings=True, batch_size=8)
+            document_embeddings = model.encode(document_texts, normalize_embeddings=True, batch_size=8)
+            similarity_matrix = np.dot(feature_embeddings, document_embeddings.T)
+            return similarity_matrix.tolist()
+        except Exception as e:
+            print(f"[WARN] Matrix encode failed ({e}), using fallback")
 
-    feature_embeddings = model.encode(feature_texts, normalize_embeddings=True, batch_size=32)
-    document_embeddings = model.encode(document_texts, normalize_embeddings=True, batch_size=32)
-
-    # Dot product of normalized vectors = cosine similarity
-    similarity_matrix = np.dot(feature_embeddings, document_embeddings.T)
-
+    feat_embs = np.array([_fallback_token_embedding(t) for t in feature_texts])
+    doc_embs = np.array([_fallback_token_embedding(t) for t in document_texts])
+    similarity_matrix = np.dot(feat_embs, doc_embs.T)
     return similarity_matrix.tolist()
 
 
@@ -84,43 +155,38 @@ def rank_documents_for_feature(
     text_key: str = "abstract",
     top_k: int = 10,
 ) -> list[dict]:
-    """
-    Rank documents by semantic similarity to a feature.
-
-    Args:
-        feature_text: The feature description.
-        documents: List of document dicts, each containing a text field.
-        text_key: Key in document dict containing the text to compare.
-        top_k: Number of top results to return.
-
-    Returns:
-        Top-k documents sorted by similarity, with similarity_score added.
-    """
+    """Rank documents by semantic similarity to a feature."""
     if not documents:
         return []
 
     model = get_model()
+    if model is not None:
+        try:
+            feature_emb = model.encode([feature_text], normalize_embeddings=True)[0]
+            doc_texts = [doc.get(text_key, "") or "" for doc in documents]
+            doc_embs = model.encode(doc_texts, normalize_embeddings=True, batch_size=8)
+            similarities = np.dot(doc_embs, feature_emb)
 
-    # Get feature embedding
-    feature_emb = model.encode([feature_text], normalize_embeddings=True)[0]
+            scored = []
+            for i, doc in enumerate(documents):
+                doc_copy = doc.copy()
+                doc_copy["similarity_score"] = float(similarities[i])
+                scored.append(doc_copy)
 
-    # Get document embeddings
-    doc_texts = [doc.get(text_key, "") or "" for doc in documents]
-    doc_embs = model.encode(doc_texts, normalize_embeddings=True, batch_size=32)
+            scored.sort(key=lambda x: x["similarity_score"], reverse=True)
+            return scored[:top_k]
+        except Exception as e:
+            print(f"[WARN] Document ranking failed ({e}), using lexical fallback")
 
-    # Compute similarities
-    similarities = np.dot(doc_embs, feature_emb)
-
-    # Create scored results
+    # Fallback to BM25 scoring
+    bm25_scores = compute_bm25_lexical_scores(feature_text, documents, text_key=text_key)
     scored = []
     for i, doc in enumerate(documents):
         doc_copy = doc.copy()
-        doc_copy["similarity_score"] = float(similarities[i])
+        doc_copy["similarity_score"] = float(bm25_scores[i]) if i < len(bm25_scores) else 0.4
         scored.append(doc_copy)
 
-    # Sort by similarity descending
     scored.sort(key=lambda x: x["similarity_score"], reverse=True)
-
     return scored[:top_k]
 
 
@@ -230,13 +296,23 @@ def reciprocal_rank_fusion(
     n_docs = len(documents)
 
     # 1. Compute Semantic Embeddings & Cosine Similarities
-    feature_emb = model.encode([feature_text], normalize_embeddings=True)[0]
     doc_texts = [
         f"{doc.get('title', '')} {doc.get(text_key, '') or ''}".strip()
         for doc in documents
     ]
-    doc_embs = model.encode(doc_texts, normalize_embeddings=True, batch_size=32)
-    semantic_sims = np.dot(doc_embs, feature_emb).tolist()
+    semantic_sims = None
+    if model is not None:
+        try:
+            feature_emb = model.encode([feature_text], normalize_embeddings=True)[0]
+            doc_embs = model.encode(doc_texts, normalize_embeddings=True, batch_size=8)
+            semantic_sims = np.dot(doc_embs, feature_emb).tolist()
+        except Exception as e:
+            print(f"[WARN] RRF semantic encoding failed ({e}), using lexical fallback")
+
+    if semantic_sims is None:
+        feat_emb = np.array(_fallback_token_embedding(feature_text))
+        doc_embs = np.array([_fallback_token_embedding(t) for t in doc_texts])
+        semantic_sims = np.dot(doc_embs, feat_emb).tolist()
 
     # 2. Compute BM25 Lexical Keyword Relevance
     keyword_scores = compute_bm25_lexical_scores(

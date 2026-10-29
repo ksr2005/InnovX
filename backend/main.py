@@ -33,11 +33,19 @@ START_TIME = datetime.now(timezone.utc)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize resources on startup, cleanup on shutdown."""
-    # Startup: pre-load the sentence-transformer model once into CPU memory
-    from services.similarity import load_embedding_model
-    load_embedding_model()
-    print("[OK] Embedding model pre-warmed: all-MiniLM-L6-v2")
+    # Port binds immediately so Render detects open port and healthy status
     print(f"[OK] InnovX Production Engine started at {START_TIME.isoformat()}")
+
+    # Pre-warm embedding model in a non-blocking background thread
+    async def _async_prewarm():
+        try:
+            from services.similarity import load_embedding_model
+            await asyncio.to_thread(load_embedding_model)
+            print("[OK] Embedding model pre-warmed in background.")
+        except Exception as e:
+            print(f"[WARN] Embedding model pre-warming skipped or deferred: {e}")
+
+    asyncio.create_task(_async_prewarm())
     yield
     # Shutdown
     print("InnovX Engine shutting down")
