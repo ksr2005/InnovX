@@ -4,6 +4,7 @@ Production-ready deployment on Render.com & Vercel
 """
 import os
 import re
+import asyncio
 from datetime import datetime, timezone
 from pathlib import Path
 from contextlib import asynccontextmanager
