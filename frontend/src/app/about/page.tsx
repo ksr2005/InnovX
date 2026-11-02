@@ -692,3 +692,4 @@ export default function AboutPage() {
     </div>
   );
 }
+

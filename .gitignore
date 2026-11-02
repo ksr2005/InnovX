@@ -35,3 +35,8 @@ Thumbs.db
 
 # Sub-projects with independent repos
 progress-tracker/
+
+# Mentor Presentation (Independent Standalone Webpage)
+presentation.html
+mentor_presentation.html
+presentation/
