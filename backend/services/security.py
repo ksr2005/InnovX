@@ -277,11 +277,11 @@ SECURITY_HEADERS = {
     "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
     "X-Permitted-Cross-Domain-Policies": "none",
     "Content-Security-Policy": (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-        "style-src 'self' 'unsafe-inline'; "
-        "img-src 'self' data: https:; "
-        "font-src 'self' data:; "
+        "default-src 'self' https: data:; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+        "img-src 'self' data: https: https://fastapi.tiangolo.com; "
+        "font-src 'self' data: https://fonts.gstatic.com; "
         "connect-src 'self' https: http:; "
         "frame-ancestors 'none';"
     ),

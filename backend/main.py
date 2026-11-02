@@ -141,7 +141,19 @@ async def security_and_rate_limit_middleware(request: Request, call_next):
 
     # 5. Inject OWASP Security Headers & Rate Limit Telemetry
     for header, value in SECURITY_HEADERS.items():
-        response.headers[header] = value
+        if header == "Content-Security-Policy" and path in ["/docs", "/redoc", "/openapi.json"]:
+            # Explicitly allow Swagger UI and ReDoc CDN assets
+            response.headers[header] = (
+                "default-src 'self' https: data:; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+                "img-src 'self' data: https: https://fastapi.tiangolo.com; "
+                "font-src 'self' data: https://fonts.gstatic.com; "
+                "connect-src 'self' https: http:; "
+                "frame-ancestors 'none';"
+            )
+        else:
+            response.headers[header] = value
 
     response.headers["X-RateLimit-Limit"] = str(limit)
     response.headers["X-RateLimit-Remaining"] = str(remaining)
