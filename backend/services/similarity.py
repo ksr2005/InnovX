@@ -1,37 +1,19 @@
 """
 Similarity Engine — Computes semantic similarity between features and retrieved documents.
-Uses sentence-transformers for embeddings with strict memory controls for cloud free tiers (e.g. Render 512MB RAM).
+Uses Google Gemini Cloud Embeddings (gemini-embedding-001, 3072-dim) for 0 MB server RAM consumption,
+with a robust local TF-IDF / hashing vectorizer fallback.
 """
 import os
+import gc
 import numpy as np
+import google.generativeai as genai
 from typing import Optional
 
-# Clamp multithreading and tensor memory before importing torch / tokenizers
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-
-try:
-    import torch
-    torch.set_num_threads(1)
-    if hasattr(torch, "set_num_interop_threads"):
-        try:
-            torch.set_num_interop_threads(1)
-        except Exception:
-            pass
-except Exception:
-    pass
-
-# Global model reference — loaded once at startup or lazily
-_model = None
-MODEL_NAME = "all-MiniLM-L6-v2"  # 22MB, 384-dim, runs on CPU in ~10ms
+MODEL_NAME = "gemini-embedding-001"  # 3072-dim cloud embedding, 0 MB server RAM
 
 
 def _fallback_token_embedding(text: str, dim: int = 384) -> list[float]:
-    """Lightweight hash-based pseudo-embedding when memory is constrained or model unavailable."""
+    """Lightweight hash-based pseudo-embedding when offline or unconfigured."""
     import hashlib
     words = (text or "").lower().split()
     vec = [0.0] * dim
@@ -48,56 +30,61 @@ def _fallback_token_embedding(text: str, dim: int = 384) -> list[float]:
 
 
 def load_embedding_model():
-    """Load the embedding model into memory with single-thread CPU constraints."""
-    global _model
-    if _model is None:
-        try:
-            print(f"Loading embedding model: {MODEL_NAME}...")
-            from sentence_transformers import SentenceTransformer
-            _model = SentenceTransformer(MODEL_NAME, device="cpu")
-            try:
-                import torch
-                torch.set_num_threads(1)
-            except Exception:
-                pass
-            dim = getattr(_model, "get_sentence_embedding_dimension", lambda: 384)()
-            print(f"[OK] Model loaded: {MODEL_NAME} ({dim}-dim)")
-        except Exception as e:
-            print(f"[WARN] SentenceTransformer could not be loaded ({e}). Using lightweight lexical fallback.")
-            _model = None
-    return _model
+    """Verify cloud embedding engine configuration."""
+    api_key = os.getenv("GEMINI_API_KEY")
+    if api_key:
+        genai.configure(api_key=api_key)
+        print(f"[OK] Cloud Embedding Engine Active: {MODEL_NAME} (3072-dim, 0 MB server RAM)")
+    else:
+        print("[WARN] GEMINI_API_KEY missing; using local lexical fallback.")
+    return True
 
 
 def get_model():
-    """Get the loaded model, loading it if necessary."""
-    global _model
-    if _model is None:
-        load_embedding_model()
-    return _model
+    return None
 
 
 def compute_embedding(text: str) -> list[float]:
-    """Compute embedding vector for a single text string."""
-    model = get_model()
-    if model is not None:
-        try:
-            embedding = model.encode(text, normalize_embeddings=True)
-            return embedding.tolist()
-        except Exception as e:
-            print(f"[WARN] Embedding encode failed ({e}), using fallback")
+    """Compute embedding vector using Gemini Cloud Embeddings (0 MB server RAM)."""
+    if not text or not text.strip():
+        return [0.0] * 384
+
+    try:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if api_key:
+            res = genai.embed_content(model="models/gemini-embedding-001", content=text.strip())
+            if "embedding" in res:
+                return res["embedding"]
+    except Exception as e:
+        print(f"[WARN] Cloud embedding API call failed: {e}. Using vector fallback.")
+
     return _fallback_token_embedding(text)
 
 
 def compute_embeddings_batch(texts: list[str]) -> list[list[float]]:
-    """Compute embedding vectors for a batch of texts (memory-safe batch size)."""
-    model = get_model()
-    if model is not None:
-        try:
-            embeddings = model.encode(texts, normalize_embeddings=True, batch_size=8)
-            return embeddings.tolist()
-        except Exception as e:
-            print(f"[WARN] Batch encode failed ({e}), using fallback")
-    return [_fallback_token_embedding(t) for t in texts]
+    """Compute embedding vectors in batch with 0 MB server RAM using Gemini Cloud Embeddings."""
+    if not texts:
+        return []
+
+    clean_texts = [t.strip() if t and t.strip() else "none" for t in texts]
+
+    try:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if api_key:
+            # Batch in chunks of 20 to avoid exceeding payload limits
+            all_embs = []
+            chunk_size = 20
+            for i in range(0, len(clean_texts), chunk_size):
+                chunk = clean_texts[i : i + chunk_size]
+                res = genai.embed_content(model="models/gemini-embedding-001", content=chunk)
+                if "embedding" in res:
+                    all_embs.extend(res["embedding"])
+            if len(all_embs) == len(clean_texts):
+                return all_embs
+    except Exception as e:
+        print(f"[WARN] Batch cloud embedding failed: {e}. Using vector fallback.")
+
+    return [_fallback_token_embedding(t) for t in clean_texts]
 
 
 def cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
@@ -113,13 +100,12 @@ def cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
 
 def compute_similarity(text_a: str, text_b: str) -> float:
     """Compute semantic cosine similarity between two text strings."""
-    model = get_model()
-    if model is not None:
-        try:
-            embs = model.encode([text_a, text_b], normalize_embeddings=True)
-            return float(np.dot(embs[0], embs[1]))
-        except Exception:
-            pass
+    try:
+        embs = compute_embeddings_batch([text_a, text_b])
+        if len(embs) == 2:
+            return cosine_similarity(embs[0], embs[1])
+    except Exception:
+        pass
     vec_a = _fallback_token_embedding(text_a)
     vec_b = _fallback_token_embedding(text_b)
     return cosine_similarity(vec_a, vec_b)
@@ -133,15 +119,22 @@ def compute_similarity_matrix(
     Compute pairwise cosine similarity between features and documents.
     Returns a matrix where matrix[i][j] = similarity between feature i and document j.
     """
-    model = get_model()
-    if model is not None:
-        try:
-            feature_embeddings = model.encode(feature_texts, normalize_embeddings=True, batch_size=8)
-            document_embeddings = model.encode(document_texts, normalize_embeddings=True, batch_size=8)
-            similarity_matrix = np.dot(feature_embeddings, document_embeddings.T)
-            return similarity_matrix.tolist()
-        except Exception as e:
-            print(f"[WARN] Matrix encode failed ({e}), using fallback")
+    try:
+        feat_embs = np.array(compute_embeddings_batch(feature_texts))
+        doc_embs = np.array(compute_embeddings_batch(document_texts))
+
+        feat_norms = np.linalg.norm(feat_embs, axis=1, keepdims=True)
+        feat_norms[feat_norms == 0] = 1.0
+        norm_feat = feat_embs / feat_norms
+
+        doc_norms = np.linalg.norm(doc_embs, axis=1, keepdims=True)
+        doc_norms[doc_norms == 0] = 1.0
+        norm_doc = doc_embs / doc_norms
+
+        similarity_matrix = np.dot(norm_feat, norm_doc.T)
+        return similarity_matrix.tolist()
+    except Exception as e:
+        print(f"[WARN] Matrix cloud encode failed ({e}), using lexical fallback")
 
     feat_embs = np.array([_fallback_token_embedding(t) for t in feature_texts])
     doc_embs = np.array([_fallback_token_embedding(t) for t in document_texts])
@@ -159,24 +152,31 @@ def rank_documents_for_feature(
     if not documents:
         return []
 
-    model = get_model()
-    if model is not None:
-        try:
-            feature_emb = model.encode([feature_text], normalize_embeddings=True)[0]
-            doc_texts = [doc.get(text_key, "") or "" for doc in documents]
-            doc_embs = model.encode(doc_texts, normalize_embeddings=True, batch_size=8)
-            similarities = np.dot(doc_embs, feature_emb)
+    try:
+        doc_texts = [doc.get(text_key, "") or "" for doc in documents]
+        feature_emb = np.array(compute_embedding(feature_text))
+        doc_embs = np.array(compute_embeddings_batch(doc_texts))
 
-            scored = []
-            for i, doc in enumerate(documents):
-                doc_copy = doc.copy()
-                doc_copy["similarity_score"] = float(similarities[i])
-                scored.append(doc_copy)
+        feat_norm = np.linalg.norm(feature_emb)
+        if feat_norm > 0:
+            feature_emb = feature_emb / feat_norm
 
-            scored.sort(key=lambda x: x["similarity_score"], reverse=True)
-            return scored[:top_k]
-        except Exception as e:
-            print(f"[WARN] Document ranking failed ({e}), using lexical fallback")
+        doc_norms = np.linalg.norm(doc_embs, axis=1, keepdims=True)
+        doc_norms[doc_norms == 0] = 1.0
+        norm_doc = doc_embs / doc_norms
+
+        similarities = np.dot(norm_doc, feature_emb)
+
+        scored = []
+        for i, doc in enumerate(documents):
+            doc_copy = doc.copy()
+            doc_copy["similarity_score"] = float(similarities[i])
+            scored.append(doc_copy)
+
+        scored.sort(key=lambda x: x["similarity_score"], reverse=True)
+        return scored[:top_k]
+    except Exception as e:
+        print(f"[WARN] Document ranking failed ({e}), using lexical fallback")
 
     # Fallback to BM25 scoring
     bm25_scores = compute_bm25_lexical_scores(feature_text, documents, text_key=text_key)

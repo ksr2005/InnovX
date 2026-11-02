@@ -17,8 +17,6 @@ import { ProvenanceCard } from "@/components/provenance-card";
 import { DecisionHub } from "@/components/decision-hub";
 import { Navbar } from "@/components/navbar";
 import { AuthModal } from "@/components/auth-modal";
-import { HowItWorks } from "@/components/how-it-works";
-import { LegalTransparency } from "@/components/legal-transparency";
 import { GuardrailFeedbackCard } from "@/components/guardrail-feedback-card";
 import { PriorArtRadar } from "@/components/prior-art-radar";
 import { ArchitectureDiagram } from "@/components/architecture-diagram";
@@ -27,6 +25,21 @@ import { PatentComparatorModal } from "@/components/patent-comparator-modal";
 import { useAuth } from "@/components/auth-context";
 import { Button } from "@/components/ui/button";
 import { SAMPLE_INNOVATION_REPORT } from "@/data/sample-report";
+import {
+  FileText,
+  Search,
+  Shield,
+  Layers,
+  Sparkles,
+  ArrowRight,
+  BarChart3,
+  Compass,
+  Cpu,
+  Lock,
+  ExternalLink,
+} from "lucide-react";
+
+type ResultTab = "evidence" | "radar" | "assessment" | "pathways" | "all";
 
 export default function Home() {
   const { user, token, openAuthModal } = useAuth();
@@ -43,6 +56,7 @@ export default function Home() {
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showComparatorModal, setShowComparatorModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<ResultTab>("evidence");
 
   const handleAnalyze = async (text: string) => {
     setLoading(true);
@@ -53,6 +67,7 @@ export default function Home() {
     setRawText(text);
     setSavedSuccess(false);
     setSaveError(null);
+    setActiveTab("evidence");
 
     try {
       const response = await analyzeIdea(text);
@@ -71,13 +86,17 @@ export default function Home() {
     }
   };
 
-
   const handleExploreSample = () => {
     setIsSampleTour(true);
     setResult(SAMPLE_INNOVATION_REPORT);
-    setRawText(SAMPLE_INNOVATION_REPORT.structured_idea.problem_statement + " " + SAMPLE_INNOVATION_REPORT.structured_idea.proposed_solution);
+    setRawText(
+      SAMPLE_INNOVATION_REPORT.structured_idea.problem_statement +
+        " " +
+        SAMPLE_INNOVATION_REPORT.structured_idea.proposed_solution
+    );
     setError(null);
-    window.scrollTo({ top: 400, behavior: "smooth" });
+    setActiveTab("evidence");
+    window.scrollTo({ top: 380, behavior: "smooth" });
   };
 
   const handleCloseSample = () => {
@@ -136,18 +155,18 @@ export default function Home() {
       <Navbar />
       <AuthModal />
 
-      <main className="flex-1 mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12 w-full space-y-16">
-        {/* ── HERO SECTION (Subtask 24-1) ── */}
+      <main className="flex-1 mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12 w-full space-y-12">
+        {/* ── MINIMAL HERO SECTION ── */}
         {!result && !loading && (
-          <div className="text-center space-y-6 pt-4 sm:pt-8 animate-in fade-in duration-500">
-            {/* Top Badge */}
+          <div className="text-center space-y-5 pt-4 sm:pt-6 animate-in fade-in duration-500">
+            {/* Top Pill */}
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-semibold shadow-sm">
               <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Next-Generation AI Innovation Engine &bull; Week 4 Live</span>
+              <span>AI Innovation Discovery &amp; Commercialization Engine</span>
             </div>
 
-            {/* Bold Headline */}
-            <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight max-w-4xl mx-auto leading-tight sm:leading-none">
+            {/* Headline */}
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight max-w-3xl mx-auto leading-tight">
               Discover what exists.
               <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
@@ -156,15 +175,14 @@ export default function Home() {
             </h1>
 
             {/* Subtitle */}
-            <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Decompose your technical concept into features, triangulate across <b>250M+ academic papers</b>, 
-              <b>arXiv preprints</b>, and <b>USPTO patents</b> with zero hallucination, and get 4 execution pathways: 
-              <b>Protect</b> &bull; <b>Share</b> &bull; <b>Connect</b> &bull; <b>Build</b>.
+            <p className="text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
+              Deconstruct your technical concept into features, cross-reference <b>250M+ academic works &amp; patents</b> with
+              zero hallucination, and get 4 post-validation execution paths: <b>Protect &bull; Share &bull; Connect &bull; Build</b>.
             </p>
           </div>
         )}
 
-        {/* ── IDEA INPUT OR SAMPLE TOUR TRIGGER ── */}
+        {/* ── INPUT INTERFACE ── */}
         <div className="space-y-4">
           <IdeaInput
             onSubmit={handleAnalyze}
@@ -173,7 +191,7 @@ export default function Home() {
             presetText={presetText}
           />
 
-          {/* Edge-Case & Guardrail Feedback Card (Subtask 25-2) */}
+          {/* Guardrail Feedback Card */}
           {guardrailFeedback && (
             <GuardrailFeedbackCard
               feedback={guardrailFeedback}
@@ -192,16 +210,65 @@ export default function Home() {
           )}
         </div>
 
+        {/* ── MINIMAL 3-CARD HIGHLIGHT BAR (Only when idle) ── */}
+        {!result && !loading && (
+          <div className="space-y-6 pt-2 animate-in fade-in duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="p-4 rounded-2xl bg-card/60 border border-border/80 flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 shrink-0">
+                  <Search className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-foreground">Multi-Corpus Triangulation</h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                    Searches OpenAlex, arXiv, and USPTO PatentsView simultaneously without walled gardens.
+                  </p>
+                </div>
+              </div>
 
-        {/* ── HOW IT WORKS SECTION (Subtask 24-2) ── */}
-        {!result && !loading && <HowItWorks />}
+              <div className="p-4 rounded-2xl bg-card/60 border border-border/80 flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 shrink-0">
+                  <Shield className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-foreground">Zero-Hallucination Evidence</h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                    Every finding is backed by verbatim quotes from authentic papers with clickable DOI links.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-card/60 border border-border/80 flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 shrink-0">
+                  <Lock className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-foreground">Private by Default</h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                    Cryptographic SHA-256 provenance chains. Your innovation is never made public without your explicit consent.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center pt-2">
+              <Link
+                href="/about"
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-emerald-400 transition-colors font-medium"
+              >
+                <span>Read our full architecture, 6 ethical rules &amp; methodology on the <b>About Us</b> page</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* ── ANALYSIS / SAMPLE REPORT RESULTS ── */}
         {result && (
-          <div className="space-y-8 animate-in fade-in duration-300">
-            {/* Sample Tour Notification Banner (Subtask 24-3) */}
+          <div className="space-y-6 animate-in fade-in duration-300">
+            {/* Sample Tour Notification Banner */}
             {isSampleTour && (
-              <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-card to-background p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+              <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-card to-background p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
                     🧪
@@ -231,10 +298,10 @@ export default function Home() {
             )}
 
             {/* Innovation Header Card */}
-            <div className="border border-border/80 rounded-2xl p-6 sm:p-7 bg-card shadow-sm space-y-5">
+            <div className="border border-border/80 rounded-2xl p-5 sm:p-6 bg-card shadow-sm space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div>
-                  <div className="flex items-center gap-2 mb-1.5">
+                  <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs text-muted-foreground font-mono">
                       Innovation #{result.innovation_id.slice(0, 8)}
                     </span>
@@ -244,31 +311,30 @@ export default function Home() {
                       </span>
                     )}
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                     {result.structured_idea.title}
                   </h2>
-                  <p className="text-xs sm:text-sm font-medium text-emerald-400 mt-1">
+                  <p className="text-xs sm:text-sm font-medium text-emerald-400 mt-0.5">
                     {result.structured_idea.domain}
                   </p>
                 </div>
 
                 {/* Header Action Buttons */}
                 <div className="flex flex-wrap items-center gap-2 shrink-0">
-                  {/* Save to Portfolio */}
                   <Button
                     onClick={handleSaveToPortfolio}
                     disabled={saving || savedSuccess}
                     variant={savedSuccess ? "outline" : "secondary"}
                     className={
                       savedSuccess
-                        ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/10 font-medium text-xs h-9"
-                        : "font-medium text-xs h-9"
+                        ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/10 font-medium text-xs h-8 sm:h-9"
+                        : "font-medium text-xs h-8 sm:h-9"
                     }
                   >
                     {saving ? (
                       <>
-                        <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-                        Saving to Vault...
+                        <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                        Saving...
                       </>
                     ) : savedSuccess ? (
                       <>
@@ -278,36 +344,34 @@ export default function Home() {
                     ) : (
                       <>
                         <span className="mr-1.5">🔒</span>
-                        Save to Private Vault
+                        Save to Vault
                       </>
                     )}
                   </Button>
 
-                  {/* Compare Against Competitor Patent Button (Day 35) */}
                   <Button
                     onClick={() => setShowComparatorModal(true)}
                     variant="outline"
-                    className="border-cyan-500/40 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 font-medium text-xs h-9 cursor-pointer"
+                    className="border-cyan-500/40 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 font-medium text-xs h-8 sm:h-9 cursor-pointer"
                   >
                     <span className="mr-1.5">⚖️</span>
-                    Compare Competitor Patent
+                    Compare Patent
                   </Button>
 
-                  {/* Download PDF */}
                   <Button
                     onClick={() => handleDownloadPdf(result.innovation_id)}
                     disabled={downloadingPdf}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs h-9 shadow-sm transition-all"
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs h-8 sm:h-9 shadow-sm transition-all"
                   >
                     {downloadingPdf ? (
                       <>
-                        <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
-                        Generating PDF...
+                        <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
+                        PDF...
                       </>
                     ) : (
                       <>
                         <span className="mr-1.5">📄</span>
-                        Download PDF Report
+                        Download PDF
                       </>
                     )}
                   </Button>
@@ -318,10 +382,10 @@ export default function Home() {
                 <p className="text-xs text-destructive font-medium">{saveError}</p>
               )}
               {savedSuccess && (
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 flex items-center justify-between">
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 flex items-center justify-between">
                   <span>✓ Stored in your private cryptographic vault.</span>
                   <Link href="/dashboard" className="font-semibold underline hover:text-emerald-300">
-                    Open in Creator Dashboard →
+                    Open in Vault →
                   </Link>
                 </div>
               )}
@@ -330,88 +394,171 @@ export default function Home() {
               )}
 
               {/* Problem / Solution Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-border/40">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-border/40 text-xs">
                 <div className="space-y-1">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <h4 className="font-bold uppercase tracking-wider text-muted-foreground">
                     Problem Statement
                   </h4>
-                  <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed">
+                  <p className="text-foreground/90 leading-relaxed">
                     {result.structured_idea.problem_statement}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Proposed Technical Solution
+                  <h4 className="font-bold uppercase tracking-wider text-muted-foreground">
+                    Proposed Solution
                   </h4>
-                  <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed">
+                  <p className="text-foreground/90 leading-relaxed">
                     {result.structured_idea.proposed_solution}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Feature Matrix Breakdown */}
-            <FeatureMatrix matrix={result.feature_matrix} />
+            {/* ── MODULAR TABBED CONTROLLER (Solves Endless Scrolling) ── */}
+            <div className="flex items-center justify-between border-b border-border/60 pb-2 overflow-x-auto gap-2">
+              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-muted/60 border border-border/60 text-xs">
+                <button
+                  onClick={() => setActiveTab("evidence")}
+                  className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                    activeTab === "evidence"
+                      ? "bg-secondary text-foreground shadow-sm font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Search className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Feature Matrix &amp; Evidence</span>
+                </button>
 
-            {/* Automated System Architecture Diagram (Day 33) */}
-            <ArchitectureDiagram structuredIdea={result.structured_idea} />
+                <button
+                  onClick={() => setActiveTab("radar")}
+                  className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                    activeTab === "radar"
+                      ? "bg-secondary text-foreground shadow-sm font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Compass className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Prior-Art Radar &amp; Architecture</span>
+                </button>
 
-            {/* Interactive Prior-Art Proximity Landscape & Novelty Opportunity Radar (Day 32) */}
-            <PriorArtRadar
-              featureMatrix={result.feature_matrix}
-              innovationTitle={result.structured_idea.title}
-            />
+                <button
+                  onClick={() => setActiveTab("assessment")}
+                  className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                    activeTab === "assessment"
+                      ? "bg-secondary text-foreground shadow-sm font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <BarChart3 className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Scores &amp; Novelty</span>
+                </button>
 
-            {/* Assessment Scores */}
-            {result.scores && result.assessment_summary && (
-              <AssessmentView scores={result.scores} summary={result.assessment_summary} />
-            )}
+                <button
+                  onClick={() => setActiveTab("pathways")}
+                  className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                    activeTab === "pathways"
+                      ? "bg-secondary text-foreground shadow-sm font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Next Steps (4 Pathways)</span>
+                </button>
 
-            {/* Cryptographic Provenance Record */}
-            <ProvenanceCard provenance={result.provenance} />
-
-            {/* Post-Report Decision Hub (The 4 Pathways) */}
-            <div className="space-y-4">
-              <div className="text-center space-y-1">
-                <span className="text-[10px] font-mono uppercase font-bold text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
-                  Post-Report Decision Hub
-                </span>
-                <h3 className="text-xl font-bold text-foreground">
-                  What Do You Want To Do With This Innovation?
-                </h3>
-                <p className="text-xs text-muted-foreground max-w-xl mx-auto">
-                  Select your commercialization strategy below to generate provisional patent drafts, defensive publications, NDA marketplace listings, or crowdfunding campaigns.
-                </p>
+                <button
+                  onClick={() => setActiveTab("all")}
+                  className={`px-2.5 py-1.5 rounded-lg font-medium transition-all cursor-pointer text-[11px] ${
+                    activeTab === "all"
+                      ? "bg-secondary text-foreground font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span>All in One</span>
+                </button>
               </div>
 
-              <DecisionHub innovationId={result.innovation_id} />
+              <div className="text-[11px] text-muted-foreground hidden lg:block">
+                <span>Deterministic SHA-256 Provenance &bull; Cloud Grounding</span>
+              </div>
             </div>
 
-            {/* US SBIR/STTR Federal Grant & Venture Capital Matcher (Day 34) */}
-            <GrantMatcherCard structuredIdea={result.structured_idea} />
+            {/* ── TAB 1: FEATURE MATRIX & EVIDENCE ── */}
+            {(activeTab === "evidence" || activeTab === "all") && (
+              <div className="space-y-6 animate-in fade-in duration-200">
+                <FeatureMatrix matrix={result.feature_matrix} />
+              </div>
+            )}
 
-            {/* Search Limitations */}
-            <div className="border border-border/60 rounded-xl p-5 bg-card/60 space-y-2 text-xs">
-              <h4 className="font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <span>⚠️</span>
-                <span>Search Confidence &amp; Limitations Notice</span>
-              </h4>
-              <ul className="space-y-1 text-muted-foreground">
-                {result.feature_matrix.limitations.map((limitation, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="text-amber-400 font-bold">&bull;</span>
-                    <span>{limitation}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {/* ── TAB 2: PRIOR ART RADAR & ARCHITECTURE ── */}
+            {(activeTab === "radar" || activeTab === "all") && (
+              <div className="space-y-6 animate-in fade-in duration-200">
+                <PriorArtRadar
+                  featureMatrix={result.feature_matrix}
+                  innovationTitle={result.structured_idea.title}
+                />
+                <ArchitectureDiagram structuredIdea={result.structured_idea} />
+              </div>
+            )}
+
+            {/* ── TAB 3: SCORES, NOVELTY & LIMITATIONS ── */}
+            {(activeTab === "assessment" || activeTab === "all") && (
+              <div className="space-y-6 animate-in fade-in duration-200">
+                {result.scores && result.assessment_summary && (
+                  <AssessmentView scores={result.scores} summary={result.assessment_summary} />
+                )}
+
+                {/* Search Limitations */}
+                <div className="border border-border/60 rounded-xl p-4 bg-card/60 space-y-2 text-xs">
+                  <h4 className="font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <span>⚠️</span>
+                    <span>Search Limitations &amp; Scope Transparency</span>
+                  </h4>
+                  <ul className="space-y-1 text-muted-foreground">
+                    {result.feature_matrix.limitations.map((limitation, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-amber-400 font-bold">&bull;</span>
+                        <span>{limitation}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-[11px] text-muted-foreground/80 pt-1">
+                    Read our complete 6 statutory ethics principles on the{" "}
+                    <Link href="/about" className="text-emerald-400 underline">
+                      About Us
+                    </Link>{" "}
+                    page.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* ── TAB 4: COMMERCIALIZE, GRANTS & PROVENANCE ── */}
+            {(activeTab === "pathways" || activeTab === "all") && (
+              <div className="space-y-6 animate-in fade-in duration-200">
+                <div className="space-y-3">
+                  <div className="text-center space-y-1">
+                    <span className="text-[10px] font-mono uppercase font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
+                      Post-Report Decision Hub
+                    </span>
+                    <h3 className="text-lg sm:text-xl font-bold text-foreground">
+                      What Do You Want To Do With This Innovation?
+                    </h3>
+                    <p className="text-xs text-muted-foreground max-w-lg mx-auto">
+                      Generate provisional patent applications, defensive publications, NDA marketplace listings, or crowdfunding campaigns.
+                    </p>
+                  </div>
+
+                  <DecisionHub innovationId={result.innovation_id} />
+                </div>
+
+                <GrantMatcherCard structuredIdea={result.structured_idea} />
+                <ProvenanceCard provenance={result.provenance} />
+              </div>
+            )}
           </div>
         )}
 
-        {/* ── LEGAL TRANSPARENCY & STATUTORY DISCLAIMERS (Subtask 24-4) ── */}
-        <LegalTransparency />
-
-        {/* ── CLAIM-BY-CLAIM COMPETITOR PATENT COMPARATOR MODAL (Day 35) ── */}
+        {/* ── CLAIM-BY-CLAIM COMPETITOR PATENT COMPARATOR MODAL ── */}
         {result && (
           <PatentComparatorModal
             structuredIdea={result.structured_idea}
@@ -421,13 +568,16 @@ export default function Home() {
         )}
       </main>
 
-      {/* ── FOOTER ── */}
-      <footer className="border-t border-border/60 bg-card/40 py-8 text-center text-xs text-muted-foreground space-y-2">
-        <p className="font-medium text-foreground/80">
-          InnovX &bull; AI-Powered Innovation Discovery, Validation &amp; Commercialization Engine
-        </p>
-        <p className="max-w-xl mx-auto text-[11px] leading-relaxed">
-          Evidence-based prior-art triangulation across OpenAlex, arXiv, and USPTO PatentsView. 
+      {/* ── STREAMLINED FOOTER ── */}
+      <footer className="border-t border-border/60 bg-card/40 py-6 text-center text-xs text-muted-foreground space-y-2">
+        <div className="flex flex-wrap items-center justify-center gap-4 text-xs">
+          <Link href="/" className="hover:text-foreground">Home</Link>
+          <Link href="/about" className="hover:text-foreground">About Us</Link>
+          <Link href="/marketplace" className="hover:text-foreground">Marketplace</Link>
+          <Link href="/dashboard" className="hover:text-foreground">Portfolio Vault</Link>
+        </div>
+        <p className="text-[11px] text-muted-foreground/80 max-w-lg mx-auto">
+          InnovX &bull; Multi-corpus evidence grounding across OpenAlex, arXiv, and USPTO PatentsView.
           Private by default. SHA-256 cryptographic provenance.
         </p>
       </footer>

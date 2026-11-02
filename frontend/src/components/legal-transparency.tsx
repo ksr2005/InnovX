@@ -23,20 +23,20 @@ export function LegalTransparency() {
         "Every prior-art match and similarity score produced by InnovX is strictly tethered to verbatim evidence sentences extracted from real papers in OpenAlex, arXiv preprints, or USPTO PatentsView grants. If an idea feature is genuinely novel and has no matching literature, InnovX transparently assigns a 0% coverage rating without hallucinating citations.",
     },
     {
+      id: "limitations",
+      title: "3. Rule 3: Search Scope Limitations & Disclaimers",
+      badge: "Search Boundaries",
+      icon: "🌐",
+      content:
+        "Every report includes comprehensive search limitations. InnovX scans English-language scientific corpora and US patents; it does not index private corporate trade secrets, classified government research, non-English publications, or Asian patent offices (CNIPA, JPO, KIPO). Results represent an empirical prior-art density signal, not an exhaustive legal clearance opinion.",
+    },
+    {
       id: "privacy",
-      title: "3. Rule 4: Private by Default Architecture",
+      title: "4. Rule 4: Private by Default Architecture",
       badge: "Confidentiality",
       icon: "🔒",
       content:
         "All ideas, technical structuring data, files, and reports are private by default, secured behind Supabase Row-Level Security (RLS) policies. Your technical descriptions are never added to public training corpora or made searchable by search engines. No third party can view your innovation unless you explicitly publish a sanitized NDA-gated marketplace listing.",
-    },
-    {
-      id: "disclosure",
-      title: "4. Rule 6: The Disclosure Paradox & Mutual NDA Shield",
-      badge: "IP Preservation",
-      icon: "🛡️",
-      content:
-        "Under international patent treaties (such as the European Patent Convention Art. 54 and Chinese Patent Law), launching or publishing an idea destroys patent novelty worldwide immediately with zero grace period. InnovX protects creators through dual-sided digital Mutual NDAs and AI-sanitized teasers to explore commercial partnerships without risking foreign patent forfeiture.",
     },
     {
       id: "provenance",
@@ -45,6 +45,14 @@ export function LegalTransparency() {
       icon: "🔗",
       content:
         "InnovX establishes immutable proof of invention timing via chained SHA-256 cryptographic hashes and server-certified UTC timestamps. We do not use speculative blockchain networks, cryptocurrencies, or NFTs — our verification is 100% reproducible with standard open-source cryptographic toolchains.",
+    },
+    {
+      id: "disclosure",
+      title: "6. Rule 6: The Disclosure Paradox & Mutual NDA Shield",
+      badge: "IP Preservation",
+      icon: "🛡️",
+      content:
+        "Under international patent treaties (such as the European Patent Convention Art. 54 and Chinese Patent Law), launching or publishing an idea destroys patent novelty worldwide immediately with zero grace period. InnovX protects creators through dual-sided digital Mutual NDAs and AI-sanitized teasers to explore commercial partnerships without risking foreign patent forfeiture.",
     },
   ];
 

@@ -43,7 +43,7 @@ export function IdeaInput({ onSubmit, isLoading, onExploreSample, presetText }: 
     };
   }, [recognitionInstance]);
 
-  const toggleVoiceRecording = () => {
+  const toggleVoiceRecording = async () => {
     if (isListening) {
       if (recognitionInstance) {
         try {
@@ -58,20 +58,39 @@ export function IdeaInput({ onSubmit, isLoading, onExploreSample, presetText }: 
     }
 
     setSpeechError(null);
-    // Check for standard or webkit SpeechRecognition
+
+    // 1. Explicitly check / request native browser microphone permissions first
+    if (typeof navigator !== "undefined" && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Release tracks so the SpeechRecognition engine has uncontested access to the microphone hardware
+        stream.getTracks().forEach((track) => track.stop());
+      } catch (micErr: unknown) {
+        const errName = micErr instanceof Error ? micErr.name : "";
+        if (errName === "NotAllowedError" || errName === "PermissionDeniedError") {
+          setSpeechError("Microphone permission is blocked. Click the lock/settings icon next to your browser address bar, set Microphone to 'Allow', and click Voice Dictate again.");
+          return;
+        } else if (errName === "NotFoundError" || errName === "DevicesNotFoundError") {
+          setSpeechError("No microphone hardware detected. Please connect an audio input device.");
+          return;
+        }
+      }
+    }
+
+    // 2. Check for standard or webkit SpeechRecognition
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SpeechRecognition =
       (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any }).SpeechRecognition ||
       (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any }).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      setSpeechError("Speech recognition is not supported in this browser. Please use Google Chrome, Microsoft Edge, or Safari.");
+      setSpeechError("Speech recognition is not natively supported in this browser. Please use Google Chrome, Microsoft Edge, or Safari.");
       return;
     }
 
     try {
       const recognition = new SpeechRecognition();
-      recognition.continuous = true;
+      recognition.continuous = false; // continuous=false is significantly more stable across Chromium/Edge on Windows & macOS
       recognition.interimResults = true;
       recognition.lang = "en-US";
 
@@ -102,7 +121,9 @@ export function IdeaInput({ onSubmit, isLoading, onExploreSample, presetText }: 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       recognition.onerror = (event: any) => {
         if (event.error === "not-allowed" || event.error === "permission-denied") {
-          setSpeechError("Microphone access was denied. Please allow microphone permissions in your browser.");
+          setSpeechError("Microphone permission was denied. Please check your browser site settings (lock icon in URL bar) and allow microphone access.");
+        } else if (event.error === "network") {
+          setSpeechError("Speech recognition service network issue. Please check your internet connection.");
         } else if (event.error !== "no-speech") {
           setSpeechError(`Voice input error: ${event.error}`);
         }
@@ -118,7 +139,7 @@ export function IdeaInput({ onSubmit, isLoading, onExploreSample, presetText }: 
       recognition.start();
       setRecognitionInstance(recognition);
     } catch {
-      setSpeechError("Failed to access microphone. Please ensure microphone permissions are granted.");
+      setSpeechError("Unable to start speech recognition. Please ensure microphone permissions are granted in your browser settings.");
       setIsListening(false);
     }
   };
@@ -362,7 +383,7 @@ export function IdeaInput({ onSubmit, isLoading, onExploreSample, presetText }: 
             Structuring technical features &rarr; Querying 250M+ OpenAlex papers &bull; 2.4M+ arXiv preprints &bull; 10M+ USPTO patents &rarr; Embedding semantic similarity vectors &rarr; Extracting sentence-level evidence.
           </p>
           <span className="text-[11px] font-mono text-muted-foreground/80 block">
-            Estimated duration: ~25-45 seconds
+            Deep multi-repository triangulation in progress &bull; Live analysis synthesizing
           </span>
         </div>
       )}
