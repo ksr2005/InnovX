@@ -26,17 +26,17 @@ import { useAuth } from "@/components/auth-context";
 import { Button } from "@/components/ui/button";
 import { SAMPLE_INNOVATION_REPORT } from "@/data/sample-report";
 import {
-  FileText,
   Search,
   Shield,
-  Layers,
   Sparkles,
   ArrowRight,
   BarChart3,
   Compass,
-  Cpu,
   Lock,
-  ExternalLink,
+  Layers,
+  FileDown,
+  Scale,
+  BookmarkCheck,
 } from "lucide-react";
 
 type ResultTab = "evidence" | "radar" | "assessment" | "pathways" | "all";
@@ -96,7 +96,7 @@ export default function Home() {
     );
     setError(null);
     setActiveTab("evidence");
-    window.scrollTo({ top: 380, behavior: "smooth" });
+    window.scrollTo({ top: 350, behavior: "smooth" });
   };
 
   const handleCloseSample = () => {
@@ -155,35 +155,38 @@ export default function Home() {
       <Navbar />
       <AuthModal />
 
-      <main className="flex-1 mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12 w-full space-y-12">
-        {/* ── MINIMAL HERO SECTION ── */}
+      {/* Subtle Ambient Radial Glow */}
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(16,185,129,0.08),rgba(255,255,255,0))] -z-10" />
+
+      <main className="flex-1 w-full mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-16 space-y-16">
+        {/* ── SPACIOUS, REFINED HERO SECTION ── */}
         {!result && !loading && (
-          <div className="text-center space-y-5 pt-4 sm:pt-6 animate-in fade-in duration-500">
-            {/* Top Pill */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-semibold shadow-sm">
-              <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>AI Innovation Discovery &amp; Commercialization Engine</span>
+          <div className="text-center space-y-6 pt-6 sm:pt-12 max-w-3xl mx-auto animate-in fade-in duration-500">
+            {/* Pill */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-semibold shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+              <span>AI-Powered Innovation Discovery &amp; Commercialization Engine</span>
             </div>
 
             {/* Headline */}
-            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight max-w-3xl mx-auto leading-tight">
+            <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground leading-[1.12]">
               Discover what exists.
               <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
-                Find what makes your idea different.
+                Find what makes your idea unique.
               </span>
             </h1>
 
-            {/* Subtitle */}
-            <p className="text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
+            {/* Subtitle with generous line-height */}
+            <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed font-normal">
               Deconstruct your technical concept into features, cross-reference <b>250M+ academic works &amp; patents</b> with
-              zero hallucination, and get 4 post-validation execution paths: <b>Protect &bull; Share &bull; Connect &bull; Build</b>.
+              zero hallucination, and unlock 4 execution pathways: <b>Protect &bull; Share &bull; Connect &bull; Build</b>.
             </p>
           </div>
         )}
 
         {/* ── INPUT INTERFACE ── */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           <IdeaInput
             onSubmit={handleAnalyze}
             isLoading={loading}
@@ -193,68 +196,70 @@ export default function Home() {
 
           {/* Guardrail Feedback Card */}
           {guardrailFeedback && (
-            <GuardrailFeedbackCard
-              feedback={guardrailFeedback}
-              onApplyTemplate={(template) => {
-                setPresetText(template);
-                setGuardrailFeedback(null);
-              }}
-              onDismiss={() => setGuardrailFeedback(null)}
-            />
+            <div className="max-w-4xl mx-auto">
+              <GuardrailFeedbackCard
+                feedback={guardrailFeedback}
+                onApplyTemplate={(template) => {
+                  setPresetText(template);
+                  setGuardrailFeedback(null);
+                }}
+                onDismiss={() => setGuardrailFeedback(null)}
+              />
+            </div>
           )}
 
           {error && (
-            <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive text-center text-xs font-medium animate-in fade-in">
+            <div className="max-w-4xl mx-auto p-4 bg-destructive/10 border border-destructive/20 rounded-2xl text-destructive text-center text-xs font-medium animate-in fade-in">
               {error}
             </div>
           )}
         </div>
 
-        {/* ── MINIMAL 3-CARD HIGHLIGHT BAR (Only when idle) ── */}
+        {/* ── SPACIOUS 3-PILLAR SHOWCASE (Only when idle) ── */}
         {!result && !loading && (
-          <div className="space-y-6 pt-2 animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="p-4 rounded-2xl bg-card/60 border border-border/80 flex items-start gap-3">
-                <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 shrink-0">
-                  <Search className="w-4 h-4" />
+          <div className="pt-8 sm:pt-12 space-y-10 animate-in fade-in duration-500 border-t border-border/40">
+            <div className="text-center space-y-2">
+              <h2 className="text-xs font-mono uppercase font-bold tracking-widest text-muted-foreground">
+                Engineered for Academic Inventors, Research Labs &amp; Technical Creators
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              <div className="p-6 rounded-3xl bg-card/40 border border-border/40 hover:border-emerald-500/30 transition-all duration-300 space-y-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <Search className="w-5 h-5" />
                 </div>
-                <div>
-                  <h3 className="text-xs font-bold text-foreground">Multi-Corpus Triangulation</h3>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-                    Searches OpenAlex, arXiv, and USPTO PatentsView simultaneously without walled gardens.
-                  </p>
-                </div>
+                <h3 className="text-sm font-bold text-foreground">Multi-Corpus Triangulation</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Concurrently queries OpenAlex (250M+ papers), arXiv preprints, and USPTO PatentsView without walled gardens or subscriptions.
+                </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-card/60 border border-border/80 flex items-start gap-3">
-                <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 shrink-0">
-                  <Shield className="w-4 h-4" />
+              <div className="p-6 rounded-3xl bg-card/40 border border-border/40 hover:border-cyan-500/30 transition-all duration-300 space-y-3">
+                <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                  <Shield className="w-5 h-5" />
                 </div>
-                <div>
-                  <h3 className="text-xs font-bold text-foreground">Zero-Hallucination Evidence</h3>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-                    Every finding is backed by verbatim quotes from authentic papers with clickable DOI links.
-                  </p>
-                </div>
+                <h3 className="text-sm font-bold text-foreground">Zero-Hallucination Evidence</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Every finding is grounded in verbatim quotes from authentic literature with clickable DOI links. The model never fabricates prior art.
+                </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-card/60 border border-border/80 flex items-start gap-3">
-                <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 shrink-0">
-                  <Lock className="w-4 h-4" />
+              <div className="p-6 rounded-3xl bg-card/40 border border-border/40 hover:border-indigo-500/30 transition-all duration-300 space-y-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                  <Lock className="w-5 h-5" />
                 </div>
-                <div>
-                  <h3 className="text-xs font-bold text-foreground">Private by Default</h3>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-                    Cryptographic SHA-256 provenance chains. Your innovation is never made public without your explicit consent.
-                  </p>
-                </div>
+                <h3 className="text-sm font-bold text-foreground">Private by Default</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Secured behind Supabase Row-Level Security with cryptographic SHA-256 provenance chains. Your IP is never indexed or used for training.
+                </p>
               </div>
             </div>
 
-            <div className="text-center pt-2">
+            <div className="text-center pt-4">
               <Link
                 href="/about"
-                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-emerald-400 transition-colors font-medium"
+                className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-emerald-400 transition-colors"
               >
                 <span>Read our full architecture, 6 ethical rules &amp; methodology on the <b>About Us</b> page</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -265,23 +270,23 @@ export default function Home() {
 
         {/* ── ANALYSIS / SAMPLE REPORT RESULTS ── */}
         {result && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            {/* Sample Tour Notification Banner */}
+          <div className="space-y-10 animate-in fade-in duration-300">
+            {/* Sample Tour Banner */}
             {isSampleTour && (
-              <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 via-card to-background p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
+              <div className="rounded-3xl border border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-card to-background p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+                <div className="flex items-center gap-4">
+                  <span className="text-3xl p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
                     🧪
                   </span>
                   <div>
-                    <h3 className="text-xs sm:text-sm font-bold text-amber-300 flex items-center gap-2">
-                      <span>Interactive Sample Report Tour Active</span>
-                      <span className="text-[10px] font-mono bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-semibold">
+                    <h3 className="text-sm font-bold text-amber-300 flex items-center gap-2">
+                      <span>Interactive Sample Report Tour</span>
+                      <span className="text-[10px] font-mono bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-semibold uppercase">
                         Demo Mode
                       </span>
                     </h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Explore the live Feature Matrix, verified evidence excerpts, 6 assessment metrics, and post-report commercialization pathways.
+                      Explore the live Feature Matrix, verified evidence excerpts, 6 assessment scores, and post-report commercialization pathways.
                     </p>
                   </div>
                 </div>
@@ -290,18 +295,18 @@ export default function Home() {
                   size="sm"
                   variant="outline"
                   onClick={handleCloseSample}
-                  className="h-8 text-xs border-amber-500/40 text-amber-300 hover:bg-amber-500/15 shrink-0"
+                  className="h-9 px-4 text-xs border-amber-500/40 text-amber-300 hover:bg-amber-500/15 shrink-0 rounded-xl"
                 >
                   ✕ Close Tour &amp; Analyze My Idea
                 </Button>
               </div>
             )}
 
-            {/* Innovation Header Card */}
-            <div className="border border-border/80 rounded-2xl p-5 sm:p-6 bg-card shadow-sm space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
+            {/* Executive Innovation Header Card */}
+            <div className="border border-border/70 rounded-3xl p-6 sm:p-8 bg-card/70 backdrop-blur-xl shadow-xl space-y-6">
+              <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+                <div className="space-y-1.5 max-w-3xl">
+                  <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground font-mono">
                       Innovation #{result.innovation_id.slice(0, 8)}
                     </span>
@@ -311,24 +316,24 @@ export default function Home() {
                       </span>
                     )}
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                  <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
                     {result.structured_idea.title}
                   </h2>
-                  <p className="text-xs sm:text-sm font-medium text-emerald-400 mt-0.5">
+                  <p className="text-xs sm:text-sm font-semibold text-emerald-400">
                     {result.structured_idea.domain}
                   </p>
                 </div>
 
                 {/* Header Action Buttons */}
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                   <Button
                     onClick={handleSaveToPortfolio}
                     disabled={saving || savedSuccess}
                     variant={savedSuccess ? "outline" : "secondary"}
                     className={
                       savedSuccess
-                        ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/10 font-medium text-xs h-8 sm:h-9"
-                        : "font-medium text-xs h-8 sm:h-9"
+                        ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/10 font-medium text-xs h-9 px-4 rounded-xl"
+                        : "font-medium text-xs h-9 px-4 rounded-xl"
                     }
                   >
                     {saving ? (
@@ -338,12 +343,12 @@ export default function Home() {
                       </>
                     ) : savedSuccess ? (
                       <>
-                        <span className="mr-1.5 text-emerald-400 font-bold">✓</span>
+                        <BookmarkCheck className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
                         Saved to Vault
                       </>
                     ) : (
                       <>
-                        <span className="mr-1.5">🔒</span>
+                        <Lock className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
                         Save to Vault
                       </>
                     )}
@@ -352,25 +357,25 @@ export default function Home() {
                   <Button
                     onClick={() => setShowComparatorModal(true)}
                     variant="outline"
-                    className="border-cyan-500/40 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 font-medium text-xs h-8 sm:h-9 cursor-pointer"
+                    className="border-border/80 text-muted-foreground hover:text-cyan-400 hover:border-cyan-500/40 font-medium text-xs h-9 px-4 rounded-xl cursor-pointer"
                   >
-                    <span className="mr-1.5">⚖️</span>
+                    <Scale className="w-3.5 h-3.5 mr-1.5 text-cyan-400" />
                     Compare Patent
                   </Button>
 
                   <Button
                     onClick={() => handleDownloadPdf(result.innovation_id)}
                     disabled={downloadingPdf}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs h-8 sm:h-9 shadow-sm transition-all"
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs h-9 px-4 rounded-xl shadow-md transition-all"
                   >
                     {downloadingPdf ? (
                       <>
                         <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
-                        PDF...
+                        Generating PDF...
                       </>
                     ) : (
                       <>
-                        <span className="mr-1.5">📄</span>
+                        <FileDown className="w-3.5 h-3.5 mr-1.5" />
                         Download PDF
                       </>
                     )}
@@ -382,8 +387,8 @@ export default function Home() {
                 <p className="text-xs text-destructive font-medium">{saveError}</p>
               )}
               {savedSuccess && (
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 flex items-center justify-between">
-                  <span>✓ Stored in your private cryptographic vault.</span>
+                <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 flex items-center justify-between">
+                  <span>Stored in your private cryptographic vault.</span>
                   <Link href="/dashboard" className="font-semibold underline hover:text-emerald-300">
                     Open in Vault →
                   </Link>
@@ -393,35 +398,35 @@ export default function Home() {
                 <p className="text-xs text-destructive font-medium">{pdfError}</p>
               )}
 
-              {/* Problem / Solution Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-border/40 text-xs">
-                <div className="space-y-1">
-                  <h4 className="font-bold uppercase tracking-wider text-muted-foreground">
+              {/* Problem / Solution Grid with generous padding */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border/40 text-xs sm:text-sm">
+                <div className="p-4 sm:p-5 rounded-2xl bg-muted/20 border border-border/40 space-y-1.5">
+                  <h4 className="font-bold uppercase tracking-wider text-muted-foreground text-xs">
                     Problem Statement
                   </h4>
-                  <p className="text-foreground/90 leading-relaxed">
+                  <p className="text-foreground/90 leading-relaxed text-xs sm:text-sm">
                     {result.structured_idea.problem_statement}
                   </p>
                 </div>
-                <div className="space-y-1">
-                  <h4 className="font-bold uppercase tracking-wider text-muted-foreground">
+                <div className="p-4 sm:p-5 rounded-2xl bg-muted/20 border border-border/40 space-y-1.5">
+                  <h4 className="font-bold uppercase tracking-wider text-muted-foreground text-xs">
                     Proposed Solution
                   </h4>
-                  <p className="text-foreground/90 leading-relaxed">
+                  <p className="text-foreground/90 leading-relaxed text-xs sm:text-sm">
                     {result.structured_idea.proposed_solution}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* ── MODULAR TABBED CONTROLLER (Solves Endless Scrolling) ── */}
-            <div className="flex items-center justify-between border-b border-border/60 pb-2 overflow-x-auto gap-2">
-              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-muted/60 border border-border/60 text-xs">
+            {/* ── FLOATING SEGMENTED TAB CONTROLLER (Centered & Spacious) ── */}
+            <div className="flex justify-center sticky top-20 z-30 pt-2">
+              <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-card/80 backdrop-blur-xl border border-border/60 shadow-2xl overflow-x-auto max-w-full">
                 <button
                   onClick={() => setActiveTab("evidence")}
-                  className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                     activeTab === "evidence"
-                      ? "bg-secondary text-foreground shadow-sm font-semibold"
+                      ? "bg-secondary text-foreground shadow-sm border border-border/60"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -431,9 +436,9 @@ export default function Home() {
 
                 <button
                   onClick={() => setActiveTab("radar")}
-                  className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                     activeTab === "radar"
-                      ? "bg-secondary text-foreground shadow-sm font-semibold"
+                      ? "bg-secondary text-foreground shadow-sm border border-border/60"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -443,9 +448,9 @@ export default function Home() {
 
                 <button
                   onClick={() => setActiveTab("assessment")}
-                  className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                     activeTab === "assessment"
-                      ? "bg-secondary text-foreground shadow-sm font-semibold"
+                      ? "bg-secondary text-foreground shadow-sm border border-border/60"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -455,9 +460,9 @@ export default function Home() {
 
                 <button
                   onClick={() => setActiveTab("pathways")}
-                  className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                     activeTab === "pathways"
-                      ? "bg-secondary text-foreground shadow-sm font-semibold"
+                      ? "bg-secondary text-foreground shadow-sm border border-border/60"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -467,7 +472,7 @@ export default function Home() {
 
                 <button
                   onClick={() => setActiveTab("all")}
-                  className={`px-2.5 py-1.5 rounded-lg font-medium transition-all cursor-pointer text-[11px] ${
+                  className={`px-3 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
                     activeTab === "all"
                       ? "bg-secondary text-foreground font-semibold"
                       : "text-muted-foreground hover:text-foreground"
@@ -476,22 +481,18 @@ export default function Home() {
                   <span>All in One</span>
                 </button>
               </div>
-
-              <div className="text-[11px] text-muted-foreground hidden lg:block">
-                <span>Deterministic SHA-256 Provenance &bull; Cloud Grounding</span>
-              </div>
             </div>
 
             {/* ── TAB 1: FEATURE MATRIX & EVIDENCE ── */}
             {(activeTab === "evidence" || activeTab === "all") && (
-              <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="space-y-8 animate-in fade-in duration-300">
                 <FeatureMatrix matrix={result.feature_matrix} />
               </div>
             )}
 
             {/* ── TAB 2: PRIOR ART RADAR & ARCHITECTURE ── */}
             {(activeTab === "radar" || activeTab === "all") && (
-              <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="space-y-8 animate-in fade-in duration-300">
                 <PriorArtRadar
                   featureMatrix={result.feature_matrix}
                   innovationTitle={result.structured_idea.title}
@@ -502,28 +503,28 @@ export default function Home() {
 
             {/* ── TAB 3: SCORES, NOVELTY & LIMITATIONS ── */}
             {(activeTab === "assessment" || activeTab === "all") && (
-              <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="space-y-8 animate-in fade-in duration-300">
                 {result.scores && result.assessment_summary && (
                   <AssessmentView scores={result.scores} summary={result.assessment_summary} />
                 )}
 
-                {/* Search Limitations */}
-                <div className="border border-border/60 rounded-xl p-4 bg-card/60 space-y-2 text-xs">
-                  <h4 className="font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                {/* Search Limitations Card */}
+                <div className="border border-border/60 rounded-3xl p-6 sm:p-8 bg-card/60 space-y-3 text-xs sm:text-sm">
+                  <h4 className="font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                     <span>⚠️</span>
                     <span>Search Limitations &amp; Scope Transparency</span>
                   </h4>
-                  <ul className="space-y-1 text-muted-foreground">
+                  <ul className="space-y-2 text-muted-foreground">
                     {result.feature_matrix.limitations.map((limitation, i) => (
-                      <li key={i} className="flex items-start gap-2">
+                      <li key={i} className="flex items-start gap-2.5">
                         <span className="text-amber-400 font-bold">&bull;</span>
-                        <span>{limitation}</span>
+                        <span className="leading-relaxed">{limitation}</span>
                       </li>
                     ))}
                   </ul>
-                  <p className="text-[11px] text-muted-foreground/80 pt-1">
-                    Read our complete 6 statutory ethics principles on the{" "}
-                    <Link href="/about" className="text-emerald-400 underline">
+                  <p className="text-xs text-muted-foreground/80 pt-2 border-t border-border/40">
+                    Review our complete 6 statutory ethics principles on the{" "}
+                    <Link href="/about" className="text-emerald-400 underline hover:text-emerald-300">
                       About Us
                     </Link>{" "}
                     page.
@@ -534,23 +535,20 @@ export default function Home() {
 
             {/* ── TAB 4: COMMERCIALIZE, GRANTS & PROVENANCE ── */}
             {(activeTab === "pathways" || activeTab === "all") && (
-              <div className="space-y-6 animate-in fade-in duration-200">
-                <div className="space-y-3">
-                  <div className="text-center space-y-1">
-                    <span className="text-[10px] font-mono uppercase font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
-                      Post-Report Decision Hub
-                    </span>
-                    <h3 className="text-lg sm:text-xl font-bold text-foreground">
-                      What Do You Want To Do With This Innovation?
-                    </h3>
-                    <p className="text-xs text-muted-foreground max-w-lg mx-auto">
-                      Generate provisional patent applications, defensive publications, NDA marketplace listings, or crowdfunding campaigns.
-                    </p>
-                  </div>
-
-                  <DecisionHub innovationId={result.innovation_id} />
+              <div className="space-y-8 animate-in fade-in duration-300">
+                <div className="space-y-4 text-center max-w-2xl mx-auto">
+                  <span className="text-[10px] font-mono uppercase font-bold text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
+                    Post-Report Decision Hub
+                  </span>
+                  <h3 className="text-xl sm:text-2xl font-bold text-foreground">
+                    What Do You Want To Do With This Innovation?
+                  </h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    Generate provisional patent applications, defensive publications, NDA marketplace listings, or crowdfunding campaigns.
+                  </p>
                 </div>
 
+                <DecisionHub innovationId={result.innovation_id} />
                 <GrantMatcherCard structuredIdea={result.structured_idea} />
                 <ProvenanceCard provenance={result.provenance} />
               </div>
@@ -569,14 +567,14 @@ export default function Home() {
       </main>
 
       {/* ── STREAMLINED FOOTER ── */}
-      <footer className="border-t border-border/60 bg-card/40 py-6 text-center text-xs text-muted-foreground space-y-2">
-        <div className="flex flex-wrap items-center justify-center gap-4 text-xs">
-          <Link href="/" className="hover:text-foreground">Home</Link>
-          <Link href="/about" className="hover:text-foreground">About Us</Link>
-          <Link href="/marketplace" className="hover:text-foreground">Marketplace</Link>
-          <Link href="/dashboard" className="hover:text-foreground">Portfolio Vault</Link>
+      <footer className="border-t border-border/60 bg-card/40 py-8 text-center text-xs text-muted-foreground space-y-3 mt-12">
+        <div className="flex flex-wrap items-center justify-center gap-6 text-xs">
+          <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
+          <Link href="/about" className="hover:text-foreground transition-colors">About Us</Link>
+          <Link href="/marketplace" className="hover:text-foreground transition-colors">Marketplace</Link>
+          <Link href="/dashboard" className="hover:text-foreground transition-colors">Portfolio Vault</Link>
         </div>
-        <p className="text-[11px] text-muted-foreground/80 max-w-lg mx-auto">
+        <p className="text-[11px] text-muted-foreground/80 max-w-lg mx-auto leading-relaxed">
           InnovX &bull; Multi-corpus evidence grounding across OpenAlex, arXiv, and USPTO PatentsView.
           Private by default. SHA-256 cryptographic provenance.
         </p>
